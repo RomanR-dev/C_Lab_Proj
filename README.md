@@ -1,2 +1,2 @@
-![Build](https://github.com/RomanR-dev/C_Lab_Proj/workflows/Build/badge.svg?branch=main)
+![main](https://github.com/RomanR-dev/C_Lab_Proj/actions/workflows/main.yml/badge.svg?branch=main)
 C language - project
