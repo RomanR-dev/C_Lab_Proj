@@ -1,7 +1,7 @@
 #include "utils/definitions.h"
 
 
-struct macroTable {
+/* struct macroTable {
     int set;
     char name[80];
     char cmnds[][80];
@@ -19,7 +19,7 @@ void addMacro(struct macroTable * table, char * name, char ** cmd){
         strcpy(table[i].cmnds[i], cmd[i]);
         i++;
     }
-}
+} */
 
 void lstrip(char * l){
     int i = 0;
@@ -36,8 +36,9 @@ void lstrip(char * l){
 char ** chooseParser(char * input){
     char * line;
     char ** parsedLine;
+    int numOfOperands;
     line = strtok(input, "");
-    int numOfOperands = getOperandsCount(line);
+    numOfOperands = getOperandsCount(line);
     switch (numOfOperands){
         case 0:
             parsedLine = parseNoOperands(input);
@@ -115,16 +116,16 @@ int main(int argc, char ** argv){
     char line[80];
     int opCount;
     int i;
-    FILE * inp = fopen("test1.txt", "r");
-    FILE * outP = fopen("testOutP.txt", "w+");
-    while ((fgets(line, 80, inp)) != NULL){ // read from .as file and save macro data
+    FILE * inp = fopen("../tester/test1.txt", "r");
+    FILE * outP = fopen("../tester/testOutP.txt", "w+");
+    while ((fgets(line, 80, inp)) != NULL){ /* read from .as file and save macro data */
         if (strlen(line) > 80) {
             printf("line to long\n");
             continue;
         }
-        parsedLine = chooseParser(line); // parse line to get command and operands
+        parsedLine = chooseParser(line); /* parse line to get command and operands */
         i = 0;
-        opCount = getOperandsCount(parsedLine[0]); // check how many operands per command is defined
+        opCount = getOperandsCount(parsedLine[0]); /* check how many operands per command is defined */
         for (;i<=opCount;i++){
             printf("%s%s", parsedLine[i], i < opCount ? " ": "");
         }
@@ -134,6 +135,6 @@ int main(int argc, char ** argv){
 
 
 
-//    free(parsedLine); free(inp); free(outP);
+/*    free(parsedLine); free(inp); free(outP); */
     return 0;
 }
