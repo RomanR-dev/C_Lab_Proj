@@ -1,92 +1,6 @@
-#include "utils/definitions.h"
-
-
-/* struct macroTable {
-    int set;
-    char name[80];
-    char cmnds[][80];
-} macroTable;
-
-void addMacro(struct macroTable * table, char * name, char ** cmd){
-    int i = 0;
-    while (table[i].set == 1){
-        i++;
-    }
-    table[i].set = 1;
-    strcpy(table[i].name, name);
-    i = 0;
-    while (sizeof(cmd) > i) {
-        strcpy(table[i].cmnds[i], cmd[i]);
-        i++;
-    }
-} */
-
-void lstrip(char * l){
-    int i = 0;
-    int j = 0;
-    while (l[i] == ' ') i++;
-    while (l[i] != '\0'){
-        l[j] = l[i];
-        i++;
-        j++;
-    }
-    l[j] = '\0';
-}
-
-char ** chooseParser(char * input){
-    char * line;
-    char ** parsedLine;
-    int numOfOperands;
-    line = strtok(input, "");
-    numOfOperands = getOperandsCount(line);
-    switch (numOfOperands){
-        case 0:
-            parsedLine = parseNoOperands(input);
-            break;
-        case 1:
-            parsedLine = parseWith1Operand(input);
-            break;
-        case 2:
-            parsedLine =  parseWith2Operands(input);
-            break;
-    }
-    return parsedLine;
-}
-
-char ** parseWith2Operands(char * input) {
-    char ** line = malloc(1);
-    lstrip(input);
-    line[0] = strtok(input, " ");
-    line[1] = strtok(NULL, ",");
-    line[2] = strtok(NULL, " ");
-    return line;
-}
-
-char ** parseWith1Operand(char * input) {
-    char ** line = malloc(1);
-    lstrip(input);
-    line[0] = strtok(input, " ");
-    line[1] = strtok(NULL, ",");
-    return line;
-}
-
-char ** parseNoOperands(char * input) {
-    char ** line = malloc(1);
-    lstrip(input);
-    line[0] = strtok(input, "");
-    return line;
-}
-
-int getOperandsCount(char * cmd){
-    int numOfFuncs = sizeof(functions)/sizeof(functions[0]);
-    int i;
-    for (i=0; i<numOfFuncs; i++){
-        if (strstr(cmd, functions[i].name)){
-            return functions[i].operands;
-        }
-    }
-    return -1;
-}
+#include "definitions.h"
+#include "utils.h"
+#include "parsers.h"
 
 
 char * concatenate(char ** toConCat, int max){
@@ -111,30 +25,151 @@ char * concatenate(char ** toConCat, int max){
     return line;
 }
 
-int main(int argc, char ** argv){
-    char ** parsedLine;
+FILE * openFile(char * fileName){
+    char * error = malloc(38 + strlen(fileName));
+    char * filePath = malloc(15 + strlen(fileName));
+    sprintf(error, "file: %s.as, returned error",fileName);
+    sprintf(filePath, "../tester/%s.as", fileName);
+    printf("Opening: %s...\n", filePath);
+    FILE * inp = fopen(filePath, "r");
+    if (inp == NULL){
+        perror(error);
+        return NULL;
+    }
+    else {
+        return inp;
+    }
+}
+
+void printWrittenLine(int opCount, char ** parsedLine){
+    int i = 0;
+    for (; i <= opCount; i++) {
+        printf("%s%s", parsedLine[i], i < opCount ? " " : "");
+    }
+}
+
+
+int lineSplitterFuncAndConcatenator(char ** parsedLine, int opCount, char * line, int errors){
+    parsedLine = chooseParser(line, &errors); /* parse line to get command and operands */
+    if (!parsedLine) return -1;
+    opCount = getOperandsCount(parsedLine[0], &errors); /* check how many operands per command is defined */
+    if (opCount == -1) return -1;
+
+    printWrittenLine(opCount, parsedLine); /* for debug purposes */
+    strcpy(line, concatenate(parsedLine, opCount)); /* concat split line and copy it to the line str */
+    return 0;
+}
+
+char ** firstPass(int argc, char ** argv ,int * newArgc){
+    int errors = 0;
+    int outputFileCounter = 1;
+    int inputFileCounter = 1;
+    int foundMacro = 0;
     char line[80];
-    int opCount;
-    int i;
-    FILE * inp = fopen("../tester/test1.txt", "r");
-    FILE * outP = fopen("../tester/testOutP.txt", "w+");
-    while ((fgets(line, 80, inp)) != NULL){ /* read from .as file and save macro data */
-        if (strlen(line) > 80) {
-            printf("line to long\n");
+    char * outPutFileName = malloc(1);
+    char ** filesForSecondPass = malloc(sizeof(char));
+    macroTable * table = malloc(1);
+    size_t filesForSecondPassSize = 0;
+    FILE * outP;
+    FILE * inp;
+
+
+    while (inputFileCounter < argc) { /* iterate over files from argv .as */
+//        sprintf(outPutFileName, "../tester/output%d.am", outputFileCounter);
+//        printf("Creating output file: %s\n", outPutFileName);
+//        outP = fopen(outPutFileName, "w+");
+        inp = openFile(argv[inputFileCounter]);
+        if (inp == NULL){
+//            fclose(outP);
+//            remove(outPutFileName);
+            printf("============================================================\n");
+            inputFileCounter++;
             continue;
         }
-        parsedLine = chooseParser(line); /* parse line to get command and operands */
-        i = 0;
-        opCount = getOperandsCount(parsedLine[0]); /* check how many operands per command is defined */
-        for (;i<=opCount;i++){
-            printf("%s%s", parsedLine[i], i < opCount ? " ": "");
+//        outputFileCounter++;
+        inputFileCounter++;
+
+        while ((fgets(line, 80, inp)) != NULL) { /* read from .as file and save macro data */
+            if (strlen(line) > 80) {
+                errors++;
+                printf("line to long\n");
+                continue;
+            }
+            lstrip(line);
+            if (line[0] == ';') continue;
+            /* macro finder  */
+            if (strstr(line, "macro")) {
+                foundMacro = 1;
+                char ** tempLine = malloc(1);
+                char * macroName = malloc(74);
+                int counter = 0;
+                strtok(line, " ");
+                stringCopy(macroName, strtok(NULL,":"));
+                while ((fgets(line, 80, inp)) != NULL) { /* read from .as file and save macro data */
+                    if (strlen(line) > 80) {
+                        errors++;
+                        printf("line to long\n");
+                        continue;
+                    }
+                    if (strstr(line, "endm")){
+                        addMacro(table, macroName, tempLine, counter);
+                        foundMacro = 0;
+                        break;
+//                        free(macroName); free(tempLine);
+                    }
+                    lstrip(line);
+                    tempLine[counter] = malloc(sizeof(char) * strlen(line));
+                    stringCopy(tempLine[counter], line);
+                    counter++;
+                }
+                if (foundMacro == 1){
+                    errors++;
+                }
+            }
+
+
+
+
+
+
+//            fputs(line, outP);
         }
-        strcpy(line, concatenate(parsedLine, opCount));
-        fputs(line, outP);
+//        fclose(outP); fclose(inp);
+        printf("First pass finished: %s, errors: %d\n", argv[inputFileCounter-1], errors);
+        if (errors == 0){
+            filesForSecondPassSize = sizeof(char) * strlen(outPutFileName);
+            filesForSecondPass[*newArgc] = malloc(filesForSecondPassSize);
+            stringCopy(filesForSecondPass[*newArgc], outPutFileName);
+            *newArgc += 1;
+        }
+        printf("============================================================\n");
+    }
+    return filesForSecondPass;
+}
+
+char ** secondPass(){
+    int opCount;
+    char ** parsedLine;
+
+
+    return parsedLine;
+}
+
+
+int main(int argc, char ** argv){
+    char ** newArgv;
+    int newArgc = 0;
+    newArgv = firstPass(argc, argv, &newArgc); /* first pass returns list of .am file names, updates amount in newArgc*/
+
+    if (newArgc > 0) {
+        int i = 0;
+        printf("\n== report: newArgc: %d", newArgc);
+        for (;i<newArgc;i++) {
+            printf("\n== report: check files: %s", newArgv[i]);
+        }
     }
 
 
-
-/*    free(parsedLine); free(inp); free(outP); */
+    free(newArgv);
     return 0;
 }
