@@ -21,3 +21,39 @@ void stringCopy(char * dest, char * src){
     }
     dest[i] = '\0';
 }
+
+FILE * openFile(char * fileName, FILE * inp){
+    char * error = malloc(38 + strlen(fileName));
+    char * filePath = malloc(15 + strlen(fileName));
+    sprintf(error, "file: %s.as, returned error",fileName);
+    sprintf(filePath, "../tester/%s.as", fileName);
+    printf("Opening: %s...\n", filePath);
+    inp = fopen(filePath, "r");
+    if (inp == NULL){
+        perror(error);
+        return NULL;
+    }
+    else {
+        return inp;
+    }
+}
+
+FILE * inputFileInit(char ** argv, FILE * inp, int * inputFileCounter){
+    /* file check and open if exists */
+    inp = openFile(argv[*inputFileCounter], inp);
+    if (inp == NULL){
+        printf("============================================================\n");
+        inputFileCounter++;
+        return NULL;
+    }
+    *inputFileCounter += 1;
+    return inp;
+}
+
+FILE * outputFileInit(FILE * outP, char * outPutFileName, int * outputFileCounter){
+    sprintf(outPutFileName, "../tester/output%d.am", *outputFileCounter);
+    printf("Creating output file: %s\n", outPutFileName);
+    outP = fopen(outPutFileName, "w+");
+    *outputFileCounter += 1;
+    return outP;
+}

@@ -5,10 +5,16 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+#define TRUE true
+#define FALSE false
+#define MAX_COMMANDS 8152 /* verify */
 
 
 
-typedef struct f {
+
+typedef struct{
     char * name;
     int opcode;
     int funct;
@@ -16,14 +22,16 @@ typedef struct f {
 } func;
 
 
-typedef struct m {
+typedef struct{
     int set;
-    char *name;
+    char * name;
     char ** cmnds;
+    int numOfCmnds;
 } macroTable;
 
-void addMacro(macroTable * table, char * name, char ** cmd, int numOfCmds);
+macroTable * addMacro(macroTable * table, char * name, char ** cmd, int numOfCmds);
 
+void delay(int time); /* not necessary */
 
 /* data consts */
 static func functions[] = {

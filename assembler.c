@@ -25,21 +25,6 @@ char * concatenate(char ** toConCat, int max){
     return line;
 }
 
-FILE * openFile(char * fileName){
-    char * error = malloc(38 + strlen(fileName));
-    char * filePath = malloc(15 + strlen(fileName));
-    sprintf(error, "file: %s.as, returned error",fileName);
-    sprintf(filePath, "../tester/%s.as", fileName);
-    printf("Opening: %s...\n", filePath);
-    FILE * inp = fopen(filePath, "r");
-    if (inp == NULL){
-        perror(error);
-        return NULL;
-    }
-    else {
-        return inp;
-    }
-}
 
 void printWrittenLine(int opCount, char ** parsedLine){
     int i = 0;
@@ -49,45 +34,56 @@ void printWrittenLine(int opCount, char ** parsedLine){
 }
 
 
-int lineSplitterFuncAndConcatenator(char ** parsedLine, int opCount, char * line, int errors){
+bool lineSplitterFuncAndConcatenate(char ** parsedLine, int opCount, char * line, int errors) {
     parsedLine = chooseParser(line, &errors); /* parse line to get command and operands */
-    if (!parsedLine) return -1;
+    if (!parsedLine) return FALSE;
     opCount = getOperandsCount(parsedLine[0], &errors); /* check how many operands per command is defined */
-    if (opCount == -1) return -1;
+    if (opCount == -1) return FALSE;
 
     printWrittenLine(opCount, parsedLine); /* for debug purposes */
     strcpy(line, concatenate(parsedLine, opCount)); /* concat split line and copy it to the line str */
-    return 0;
+    return TRUE;
 }
+
+
+bool macroWriter(char * line, macroTable * table, FILE * outP){
+    char * currLine = malloc(strlen(line));
+    int macroCounter = 0;
+    int i = 0;
+    stringCopy(currLine, line);
+    while (table[macroCounter].set == 1){
+        if (strstr(currLine, table[macroCounter].name)){
+            /*write macro*/
+            for (;i<table[macroCounter].numOfCmnds; i++){
+                fputs(table[macroCounter].cmnds[i], outP);
+            }
+            return TRUE;
+        }
+        macroCounter++;
+    }
+    return FALSE;
+}
+
 
 char ** firstPass(int argc, char ** argv ,int * newArgc){
     int errors = 0;
     int outputFileCounter = 1;
     int inputFileCounter = 1;
     int foundMacro = 0;
+    bool writeResult;
     char line[80];
     char * outPutFileName = malloc(1);
     char ** filesForSecondPass = malloc(sizeof(char));
-    macroTable * table = malloc(1);
+    macroTable * table = malloc(sizeof(macroTable));
     size_t filesForSecondPassSize = 0;
     FILE * outP;
     FILE * inp;
 
 
     while (inputFileCounter < argc) { /* iterate over files from argv .as */
-//        sprintf(outPutFileName, "../tester/output%d.am", outputFileCounter);
-//        printf("Creating output file: %s\n", outPutFileName);
-//        outP = fopen(outPutFileName, "w+");
-        inp = openFile(argv[inputFileCounter]);
-        if (inp == NULL){
-//            fclose(outP);
-//            remove(outPutFileName);
-            printf("============================================================\n");
-            inputFileCounter++;
-            continue;
-        }
-//        outputFileCounter++;
-        inputFileCounter++;
+        if ((inp = inputFileInit(argv,  inp, &inputFileCounter)) == NULL) continue;
+        else outP = outputFileInit(outP, outPutFileName, &outputFileCounter);
+
 
         while ((fgets(line, 80, inp)) != NULL) { /* read from .as file and save macro data */
             if (strlen(line) > 80) {
@@ -95,8 +91,9 @@ char ** firstPass(int argc, char ** argv ,int * newArgc){
                 printf("line to long\n");
                 continue;
             }
-            lstrip(line);
+            if (line[0] == '\n') continue;
             if (line[0] == ';') continue;
+            lstrip(line);
             /* macro finder  */
             if (strstr(line, "macro")) {
                 foundMacro = 1;
@@ -112,10 +109,9 @@ char ** firstPass(int argc, char ** argv ,int * newArgc){
                         continue;
                     }
                     if (strstr(line, "endm")){
-                        addMacro(table, macroName, tempLine, counter);
+                        table = addMacro(table, macroName, tempLine, counter);
                         foundMacro = 0;
                         break;
-//                        free(macroName); free(tempLine);
                     }
                     lstrip(line);
                     tempLine[counter] = malloc(sizeof(char) * strlen(line));
@@ -125,16 +121,15 @@ char ** firstPass(int argc, char ** argv ,int * newArgc){
                 if (foundMacro == 1){
                     errors++;
                 }
+                continue;
             }
+            /* if call to macro check if macro exists if no error if so fputs*/
+            writeResult = macroWriter(line, table, outP);
+            if (!writeResult) fputs(line, outP);
 
-
-
-
-
-
-//            fputs(line, outP);
         }
-//        fclose(outP); fclose(inp);
+
+        fclose(outP); fclose(inp);
         printf("First pass finished: %s, errors: %d\n", argv[inputFileCounter-1], errors);
         if (errors == 0){
             filesForSecondPassSize = sizeof(char) * strlen(outPutFileName);
@@ -170,6 +165,6 @@ int main(int argc, char ** argv){
     }
 
 
-    free(newArgv);
+//    free(newArgv);
     return 0;
 }
