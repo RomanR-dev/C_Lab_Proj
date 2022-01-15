@@ -22,6 +22,11 @@ void stringCopy(char * dest, char * src){
     dest[i] = '\0';
 }
 
+void delay(int time){
+    int i = 0;
+    for (;i<time;i++);
+}
+
 FILE * openFile(char * fileName, FILE * inp){
     char * error = malloc(38 + strlen(fileName));
     char * filePath = malloc(15 + strlen(fileName));
@@ -43,7 +48,7 @@ FILE * inputFileInit(char ** argv, FILE * inp, int * inputFileCounter){
     inp = openFile(argv[*inputFileCounter], inp);
     if (inp == NULL){
         printf("============================================================\n");
-        inputFileCounter++;
+        *inputFileCounter += 1;
         return NULL;
     }
     *inputFileCounter += 1;

@@ -64,6 +64,52 @@ bool macroWriter(char * line, macroTable * table, FILE * outP){
     return FALSE;
 }
 
+void setAttribType(char * attrib, attribute * att){
+    if (strstr(attrib, ".entry")){
+        att->entry = TRUE;
+    }
+    else if (strstr(attrib, ".extern")) {
+        att->external = TRUE;
+    }
+    else if (strstr(attrib, ".data")) {
+        att->data = TRUE;
+    }
+    else {
+        att->code = TRUE;
+    }
+}
+
+bool checkIfAttrib(char * attrib){
+    if (strstr(attrib, ".entry") || strstr(attrib, ".extern") || strstr(attrib, ".data")){
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void setNode(symbol * node, char * name, int line, int baseAddr, int offset, attribute attribs){
+    node->name = malloc(strlen(name));
+    node->attribs = (attribute *) malloc(sizeof(attribute));
+
+}
+
+void addLabel(char * line, symbol * head) {
+    if ((line[strlen(line) - 1] == ':') || line[0] == '.') {
+
+
+        symbol *temp, *curr;
+        int counter = 0;
+        do {
+            curr = (symbol *) malloc(sizeof(symbol));
+            /* if (head->isSet != TRUE) {
+                head = temp = curr;
+                attribute *  currAtrib = malloc(sizeof(attribute));
+                setNode(curr, name, lineNum, baseAddr, offset, attrib)
+
+            } */
+        } while (1);
+    }
+}
+
 
 char ** firstPass(int argc, char ** argv ,int * newArgc){
     int errors = 0;
@@ -72,9 +118,10 @@ char ** firstPass(int argc, char ** argv ,int * newArgc){
     int foundMacro = 0;
     bool writeResult;
     char line[80];
-    char * outPutFileName = malloc(1);
+    char * outPutFileName = malloc(sizeof(char));
     char ** filesForSecondPass = malloc(sizeof(char));
     macroTable * table = malloc(sizeof(macroTable));
+    symbol * head = malloc(sizeof(symbol));
     size_t filesForSecondPassSize = 0;
     FILE * outP;
     FILE * inp;
@@ -123,9 +170,12 @@ char ** firstPass(int argc, char ** argv ,int * newArgc){
                 }
                 continue;
             }
-            /* if call to macro check if macro exists if no error if so fputs*/
+            /* if written macro continue to next line, else write the line as is to new file */
             writeResult = macroWriter(line, table, outP);
             if (!writeResult) fputs(line, outP);
+            /* check if label in said line */
+            addLabel(line, head);
+
 
         }
 

@@ -1,4 +1,5 @@
-
+#ifndef _UTILS_
+#define _UTILS_
 
 /* utils */
 void lstrip(char * l);
@@ -10,4 +11,8 @@ FILE * openFile(char * fileName, FILE * inp);
 FILE * inputFileInit(char ** argv, FILE * inp, int * inputFileCounter);
 
 FILE * outputFileInit(FILE * outP, char * outPutFileName, int * outputFileCounter);
+
+void delay(int time); /* not necessary */
+
+#endif
 

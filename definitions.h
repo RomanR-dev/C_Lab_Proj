@@ -9,29 +9,54 @@
 
 #define TRUE true
 #define FALSE false
-#define MAX_COMMANDS 8152 /* verify */
+#define MAX_COMMANDS 8192
+
+static int lineCounter = 100;
+
+typedef struct {
+    char code;
+    char data;
+    char external;
+    char entry;
+} attribute;
+
+typedef struct symbol{
+    char * name;
+    int lineNum;
+    int baseAddress;
+    int offset;
+    attribute * attribs;
+
+    bool isSet;
+    bool hasNext;
+    struct symbol * next;
+
+    void (*printPtr)(struct symbol * self);
+} symbol;
+
+typedef enum {
+            /*21 binary*/
+    sort0,  /*00*/
+    sort1,  /*01*/
+    sort2,  /*10*/
+    sort3   /*11*/
+} sortType;
 
 
-
-
-typedef struct{
+typedef struct {
     char * name;
     int opcode;
     int funct;
     int operands;
 } func;
 
-
-typedef struct{
+typedef struct {
     int set;
     char * name;
     char ** cmnds;
     int numOfCmnds;
 } macroTable;
 
-macroTable * addMacro(macroTable * table, char * name, char ** cmd, int numOfCmds);
-
-void delay(int time); /* not necessary */
 
 /* data consts */
 static func functions[] = {
