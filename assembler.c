@@ -149,6 +149,7 @@ void parseLabel(char *line, symbol *head, int IC) {
 
 void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *table) {
     int foundMacro = 0;
+    bool endm = false;
     bool writeResult;
     /* macro finder  */
     if (strstr(line, "macro")) {
@@ -165,6 +166,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
                 continue;
             }
             if (strstr(line, "endm")) {
+                endm = true;
                 table = addMacro(table, macroName, tempLine, counter);
                 foundMacro = 0;
                 break;
@@ -180,7 +182,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
     }
     /* if written macro continue to next line, else write the line as is to new file */
     writeResult = macroWriter(line, table, outP);
-    if (!writeResult) fputs(line, outP);
+    if (!writeResult && endm == false) fputs(line, outP);
 }
 
 char *iterator(char *line, FILE *inp, int *errors) {
