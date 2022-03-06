@@ -9,32 +9,31 @@
 
 #define TRUE true
 #define FALSE false
+#define MAX_LENGTH 80
 #define MAX_COMMANDS 8192
 
 
 typedef struct {
-    char code;
-    char data;
-    char external;
-    char entry;
+    bool code;
+    bool data;
+    bool external;
+    bool entry;
 } attribute;
 
-typedef struct symbol{
-    char * name;
+typedef struct symbol {
+    char *name;
     int value;
     int baseAddress;
     int offset;
-    attribute * attribs;
+    attribute *attribs;
 
     bool isSet;
     bool hasNext;
-    struct symbol * next;
-
-    void (*printPtr)(struct symbol * self);
+    struct symbol *next;
 } symbol;
 
 typedef enum {
-            /*binary*/
+    /*binary*/
     sort0,  /*00 extra1 word*/
     sort1,  /*01 extra 2 words*/
     sort2,  /*10 extra 2 words*/
@@ -43,7 +42,7 @@ typedef enum {
 
 
 typedef struct {
-    char * name;
+    char *name;
     int opcode;
     int funct;
     int operands;
@@ -51,35 +50,58 @@ typedef struct {
 
 typedef struct {
     int set;
-    char * name;
-    char ** cmnds;
+    char *name;
+    char **cmnds;
     int numOfCmnds;
 } macroTable;
 
 
 /* data consts */
 static func functions[] = {
-        {"mov", 0, -1, 2},
-        {"cmp", 1, -1, 2},
-        {"add", 2, 10, 2},
-        {"sub", 2, 11, 2},
-        {"lea", 4, -1, 2},
+        {"mov",  0,  -1, 2},
+        {"cmp",  1,  -1, 2},
+        {"add",  2,  10, 2},
+        {"sub",  2,  11, 2},
+        {"lea",  4,  -1, 2},
 
-        {"clr", 5, 10, 1},
-        {"not", 5, 11, 1},
-        {"inc", 5, 12, 1},
-        {"dec", 5, 13, 1},
-        {"jmp", 9, 10, 1},
-        {"bne", 9, 11, 1},
-        {"jsr", 9, 12, 1},
-        {"red", 12, -1, 1},
-        {"prn", 13, -1, 1},
+        {"clr",  5,  10, 1},
+        {"not",  5,  11, 1},
+        {"inc",  5,  12, 1},
+        {"dec",  5,  13, 1},
+        {"jmp",  9,  10, 1},
+        {"bne",  9,  11, 1},
+        {"jsr",  9,  12, 1},
+        {"red",  12, -1, 1},
+        {"prn",  13, -1, 1},
 
-        {"rts", 14, -1, 0},
+        {"rts",  14, -1, 0},
         {"stop", 15, -1, 0}
 };
 
+typedef struct word1 {
+    unsigned int destAddr: 2;
+    unsigned int destReg: 4;
+    unsigned int sourceAddr: 2;
+    unsigned int sourceReg: 4;
+    unsigned int funct: 4;
+    unsigned int A: 1;
+    unsigned int R: 1;
+    unsigned int E: 1;
+} word1;
 
+typedef struct word2 {
+    unsigned int opcode: 16;
+    unsigned int A: 1;
+    unsigned int R: 1;
+    unsigned int E: 1;
+} word2;
+
+typedef struct machineCode {
+    union word {
+        word1 *code;
+        word2 *data;
+    } word;
+} machineCode;
 
 
 #endif

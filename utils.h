@@ -14,5 +14,7 @@ FILE * outputFileInit(FILE * outP, char * outPutFileName, char * inputName);
 
 void delay(int time); /* not necessary */
 
+void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, int *IC);
+
 #endif
 

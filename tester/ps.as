@@ -1,6 +1,5 @@
+STR: .string “abcd”
+LIST: .data 6, -9
 
-macro m1
-inc r6
-mov r3, W
-endm
-m1
+.entry LIST
+.extern W
