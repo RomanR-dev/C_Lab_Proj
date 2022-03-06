@@ -10,7 +10,7 @@ FILE * openFile(char * fileName, FILE * inp);
 
 FILE * inputFileInit(char ** argv, FILE * inp, int * inputFileCounter);
 
-FILE * outputFileInit(FILE * outP, char * outPutFileName, int * outputFileCounter);
+FILE * outputFileInit(FILE * outP, char * outPutFileName, char * inputName);
 
 void delay(int time); /* not necessary */
 

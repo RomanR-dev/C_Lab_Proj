@@ -55,10 +55,9 @@ FILE * inputFileInit(char ** argv, FILE * inp, int * inputFileCounter){
     return inp;
 }
 
-FILE * outputFileInit(FILE * outP, char * outPutFileName, int * outputFileCounter){
-    sprintf(outPutFileName, "../tester/output%d.am", *outputFileCounter);
+FILE * outputFileInit(FILE * outP, char * outPutFileName, char * inputName){
+    sprintf(outPutFileName, "../tester/%s.am", inputName);
     printf("Creating output file: %s\n", outPutFileName);
     outP = fopen(outPutFileName, "w+");
-    *outputFileCounter += 1;
     return outP;
 }

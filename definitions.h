@@ -11,7 +11,6 @@
 #define FALSE false
 #define MAX_COMMANDS 8192
 
-static int lineCounter = 100;
 
 typedef struct {
     char code;
@@ -22,7 +21,7 @@ typedef struct {
 
 typedef struct symbol{
     char * name;
-    int lineNum;
+    int value;
     int baseAddress;
     int offset;
     attribute * attribs;
@@ -35,11 +34,11 @@ typedef struct symbol{
 } symbol;
 
 typedef enum {
-            /*21 binary*/
-    sort0,  /*00*/
-    sort1,  /*01*/
-    sort2,  /*10*/
-    sort3   /*11*/
+            /*binary*/
+    sort0,  /*00 extra1 word*/
+    sort1,  /*01 extra 2 words*/
+    sort2,  /*10 extra 2 words*/
+    sort3   /*11 extra 0 words*/
 } sortType;
 
 
@@ -61,29 +60,22 @@ typedef struct {
 /* data consts */
 static func functions[] = {
         {"mov", 0, -1, 2},
+        {"cmp", 1, -1, 2},
+        {"add", 2, 10, 2},
+        {"sub", 2, 11, 2},
+        {"lea", 4, -1, 2},
 
-        {"cmp", 1, -1, 1},
-
-        {"add", 2, 10, 0},
-        {"sub", 2, 11, 0},
-
-        {"lea", 4, -1, 0},
-
-        {"clr", 5, 10, 0},
-        {"not", 5, 11, 0},
-        {"inc", 5, 12, 0},
-        {"dec", 5, 13, 0},
-
-        {"jmp", 9, 10, 0},
-        {"bne", 9, 11, 0},
-        {"jsr", 9, 12, 0},
-
-        {"red", 12, -1, 0},
-
-        {"prn", 13, -1, 0},
+        {"clr", 5, 10, 1},
+        {"not", 5, 11, 1},
+        {"inc", 5, 12, 1},
+        {"dec", 5, 13, 1},
+        {"jmp", 9, 10, 1},
+        {"bne", 9, 11, 1},
+        {"jsr", 9, 12, 1},
+        {"red", 12, -1, 1},
+        {"prn", 13, -1, 1},
 
         {"rts", 14, -1, 0},
-
         {"stop", 15, -1, 0}
 };
 
