@@ -48,12 +48,10 @@ bool lineSplitterFuncAndConcatenate(char **parsedLine, int opCount, char *line, 
 
 
 bool macroWriter(char *line, macroTable *table, FILE *outP) {
-    char *currLine = malloc(strlen(line));
     int macroCounter = 0;
     int i = 0;
-    stringCopy(currLine, line);
     while (table[macroCounter].set == 1) {
-        if (strstr(currLine, table[macroCounter].name)) {
+        if (strstr(line, table[macroCounter].name) || strstr(table[macroCounter].name, line)) {
             /*write macro*/
             for (; i < table[macroCounter].numOfCmnds; i++) {
                 fputs(table[macroCounter].cmnds[i], outP);
@@ -67,13 +65,13 @@ bool macroWriter(char *line, macroTable *table, FILE *outP) {
 
 void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *table) {
     int foundMacro = 0;
-    bool endm = false;
-    bool writeResult;
+    bool endm = FALSE;
+    bool writeResult = FALSE;
     /* macro finder  */
     if (strstr(line, "macro")) {
         foundMacro = 1;
-        char **tempLine = malloc(1);
-        char *macroName = malloc(74);
+        char **tempLine = (char **) malloc(1);
+        char *macroName = (char *) malloc(74);
         int counter = 0;
         strtok(line, " ");
         stringCopy(macroName, strtok(NULL, ":"));
@@ -84,13 +82,13 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
                 continue;
             }
             if (strstr(line, "endm")) {
-                endm = true;
+                endm = TRUE;
                 table = addMacro(table, macroName, tempLine, counter);
                 foundMacro = 0;
                 break;
             }
             lstrip(line);
-            tempLine[counter] = malloc(sizeof(char) * strlen(line));
+            tempLine[counter] = (char *) malloc(sizeof(char) * (strlen(line)+1));
             stringCopy(tempLine[counter], line);
             counter++;
         }
@@ -100,7 +98,9 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
     }
     /* if written macro continue to next line, else write the line as is to new file */
     writeResult = macroWriter(line, table, outP);
-    if (!writeResult && endm == false) fputs(line, outP);
+    if (!writeResult && endm == false) {
+        fprintf(outP, "%s", line);
+    }
 }
 
 char *iterator(char *line, FILE *inp, int *errors) {
@@ -164,11 +164,11 @@ int checkIfAttrib(char *attrib) {
 
 bool checkIfDirective(char *line) {
     int res;
-    char *tempLine = (char *) malloc(strlen(line));
+    char *tempLine = (char *) malloc(strlen(line)+1);
     stringCopy(tempLine, line);
     strtok(tempLine, " ");
     tempLine = strtok(NULL, " ");
-    if (tempLine[0] == '.') {
+    if (tempLine != NULL && tempLine[0] == '.') {
         res = checkIfAttrib(tempLine); /* check if attrib*/
         if (res == 2) {
             return TRUE;
@@ -178,7 +178,7 @@ bool checkIfDirective(char *line) {
 }
 
 bool checkIfLabel(char *line) {
-    char *tempLine = (char *) malloc(strlen(line));
+    char *tempLine = (char *) malloc(strlen(line)+1);
     stringCopy(tempLine, line);
     tempLine = strtok(tempLine, " ");
     if (tempLine[strlen(tempLine) - 1] == ':') {
@@ -188,59 +188,55 @@ bool checkIfLabel(char *line) {
     return FALSE;
 }
 
-void codeDataOrString(char * line, machineCode *mCode, int *DC, bool withLabel){
+void codeDataOrString(char *line, machineCode *mCode, int *DC, bool withLabel) {
     /* get the string from between quotes, insert with for over len */
-    char *tempLine = (char *) malloc(strlen(line));
-    char * directive = (char *) malloc(strlen(line));
+    char *tempLine = (char *) malloc(strlen(line)+1);
+    char *directive = (char *) malloc(strlen(line)+1);
     int i = 0;
     int j = 0;
     stringCopy(directive, line);
     stringCopy(tempLine, line);
-    if (withLabel == TRUE){
+    if (withLabel == TRUE) {
         directive = strtok(directive, ":");
         directive = strtok(NULL, " ");
-    }
-    else {
+    } else {
         directive = strtok(directive, " ");
     }
-    if (strstr(directive, ".string")){
+    if (strstr(directive, ".string")) {
         tempLine = strtok(tempLine, "”");
         tempLine = strtok(NULL, "");
-        while (i< strlen(tempLine)){
-            if (isalnum(tempLine[i])){
+        while (i < strlen(tempLine)) {
+            if (isalnum(tempLine[i])) {
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
                 mCode[*DC].word.data->opcode = tempLine[j];
                 mCode[*DC].word.data->A = 1;
                 i++, j++;
-                *DC+=1;
+                *DC += 1;
                 continue;
             }
             i++;
         }
-    }
-    else {
+    } else {
         bool negative = FALSE;
         unsigned int insert;
         strtok(tempLine, ".data");
         tempLine = strtok(NULL, "");
         tempLine = strtok(tempLine, "data");
-        while (i< strlen(tempLine)){
-            if (isalnum(tempLine[i])){
-                if (negative == TRUE){
+        while (i < strlen(tempLine)) {
+            if (isalnum(tempLine[i])) {
+                if (negative == TRUE) {
                     insert = tempLine[j] * (-1);
                     negative = FALSE;
-                }
-                else {
+                } else {
                     insert = tempLine[j];
                 }
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
                 mCode[*DC].word.data->opcode = insert;
                 mCode[*DC].word.data->A = 1;
                 i++, j++;
-                *DC+=1;
+                *DC += 1;
                 continue;
-            }
-            else if (tempLine[i] == '-'){
+            } else if (tempLine[i] == '-') {
                 i++;
                 negative = TRUE;
                 continue;
@@ -252,13 +248,13 @@ void codeDataOrString(char * line, machineCode *mCode, int *DC, bool withLabel){
     mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
     mCode[*DC].word.data->opcode = '\0';
     mCode[*DC].word.data->A = 1;
-    *DC+=1;
+    *DC += 1;
 }
 
 void parseLabel(char *line, symbol *head, int *IC, int *DC, int *errors, machineCode *mCode) {
     bool isLabel = FALSE;
     bool isDirective = FALSE;
-    char *name = (char *) malloc(strlen(line));
+    char *name = (char *) malloc(strlen(line)+1);
     stringCopy(name, line);
     attribute *attribs = (attribute *) malloc(sizeof(attribute));
 
@@ -270,12 +266,9 @@ void parseLabel(char *line, symbol *head, int *IC, int *DC, int *errors, machine
     if (isLabel == TRUE && isDirective == TRUE) {
         addSymbol(name, attribs, tempNode, head, currNode, IC);
         codeDataOrString(line, mCode, DC, isLabel);
-    }
-    else if (isLabel == FALSE && isDirective == TRUE){
+    } else if (isLabel == FALSE && isDirective == TRUE) {
         codeDataOrString(line, mCode, DC, isLabel);
     }
-
-
 }
 
 
