@@ -1,6 +1,47 @@
 #include "definitions.h"
+#include "parsers.h"
 
 /* utils */
+char *concatenate(char **toConCat, int max) {
+    char *line = malloc(80);
+    switch (max) {
+        case 0:
+            strcpy(line, toConCat[0]);
+            break;
+        case 1:
+            strcpy(line, toConCat[0]);
+            strcat(line, " ");
+            strcat(line, toConCat[1]);
+            break;
+        case 2:
+            strcpy(line, toConCat[0]);
+            strcat(line, " ");
+            strcat(line, toConCat[1]);
+            strcat(line, ", ");
+            strcat(line, toConCat[2]);
+            break;
+    }
+    return line;
+}
+
+void printWrittenLine(int opCount, char **parsedLine) {
+    int i = 0;
+    for (; i <= opCount; i++) {
+        printf("%s%s", parsedLine[i], i < opCount ? " " : "");
+    }
+}
+
+bool lineSplitterFuncAndConcatenate(char **parsedLine, int opCount, char *line, int errors) {
+    parsedLine = chooseParser(line, &errors); /* parse line to get command and operands */
+    if (!parsedLine) return FALSE;
+    opCount = getOperandsCount(parsedLine[0], &errors); /* check how many operands per command is defined */
+    if (opCount == -1) return FALSE;
+
+    printWrittenLine(opCount, parsedLine); /* for debug purposes */
+    strcpy(line, concatenate(parsedLine, opCount)); /* concat split line and copy it to the line str */
+    return TRUE;
+}
+
 void lstrip(char *l) {
     int i = 0;
     int j = 0;
@@ -113,22 +154,100 @@ symbol *addNodeToList(symbol *head, symbol *node) {
 
 int findOffset(int IC) {
     IC--;
-    while ((IC % 4) != 0) {
+    while ((IC % 16) != 0) {
         IC--;
     }
     return IC;
 }
 
-void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, int *IC) {
-    attribs->data = TRUE;
-    attribs->code = FALSE;
-    attribs->external = FALSE;
-    attribs->entry = FALSE;
+int checkIfEntryOrExtern(char *line) {
+    char *attrib = (char *) malloc(strlen(line) + 1);
+    stringCopy(attrib, line);
+    attrib = strtok(attrib, " ");
+    if (strstr(".entry", attrib)) {
+        return 1;
+    } else if (strstr(".extern", attrib)) {
+        return 2;
+    }
+    return -1;
+}
+
+int checkIfAttrib(char *attrib) {
+    if (strstr(".entry", attrib) || strstr(".extern", attrib)) {
+        return 1;
+    } else if (strstr(".data", attrib) || strstr(".string", attrib)) {
+        return 2;
+    }
+    return 0;
+}
+
+bool checkIfDirective(char *line) {
+    int res;
+    char *tempLine = (char *) malloc(strlen(line) + 1);
+    stringCopy(tempLine, line);
+    strtok(tempLine, " ");
+    tempLine = strtok(NULL, " ");
+    if (tempLine != NULL && tempLine[0] == '.') {
+        res = checkIfAttrib(tempLine); /* check if attrib*/
+        if (res == 2) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void setAttrib(attribute *attribs, char *line) {
+    if (checkIfEntryOrExtern(line) == 1) {
+        attribs->data = FALSE;
+        attribs->code = FALSE;
+        attribs->external = FALSE;
+        attribs->entry = TRUE;
+    } else if (checkIfEntryOrExtern(line) == 2) {
+        attribs->data = FALSE;
+        attribs->code = FALSE;
+        attribs->external = TRUE;
+        attribs->entry = FALSE;
+    } else if (checkIfDirective(line) == TRUE){
+        attribs->data = TRUE;
+        attribs->code = FALSE;
+        attribs->external = FALSE;
+        attribs->entry = FALSE;
+    }
+    else {
+        attribs->data = FALSE;
+        attribs->code = TRUE;
+        attribs->external = FALSE;
+        attribs->entry = FALSE;
+    }
+}
+
+void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, int *IC, char *line) {
+    int offSet = 0;
+    if (*IC != 0) offSet = findOffset(*IC);
+
+    setAttrib(attribs, line);
     name = strtok(name, ":");
-    tempNode = setNode(tempNode, name, *IC, findOffset(*IC), *IC - findOffset(*IC), *attribs);
+    tempNode = setNode(tempNode, name, *IC, offSet, *IC - offSet, *attribs);
+
     if (head->isSet == FALSE) {
         copyNode(head, tempNode);
     } else {
         addNodeToList(currNode, tempNode);
     }
+    *IC += *IC - offSet;
+}
+
+char *iterator(char *line, FILE *inp, int *errors) {
+    while ((fgets(line, MAX_LENGTH, inp)) != NULL) { /* read from .as file and save macro data to .am file */
+        if (strlen(line) > MAX_LENGTH) {
+            errors += 1;
+            printf("line to long\n");
+            continue;
+        }
+        if (line[0] == '\n') continue;
+        if (line[0] == ';') continue;
+        lstrip(line);
+        return line;
+    }
+    return "NULL";
 }
