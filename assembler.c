@@ -4,6 +4,14 @@
 
 bool firstPass(char *line, FILE *inp, int *errors);
 
+void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand);
+
+void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E);
+
+bool secondPass(char *line, FILE *outP, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC);
+
+void freeMachineCodes(machineCode *mCode);
+
 
 bool macroWriter(char *line, macroTable *table, FILE *outP) {
     int macroCounter = 0;
@@ -81,7 +89,8 @@ void mainRunner(int argc, char **argv) {
             if (strstr(line, "NULL")) break;
             preAssembler(line, &errors, inp, outP, table); /* macro handler */
         }
-        printf("pre assembler finished: %s, errors: %d\n", argv[inputFileCounter - 1], errors);
+        printf("pre assembler finished: %s, errors: %d", argv[inputFileCounter - 1], errors);
+        printf("\n============================================================\n");
         inputFileCounter++;
         if (errors == 0) {
             fclose(inp);
@@ -91,8 +100,11 @@ void mainRunner(int argc, char **argv) {
             fclose(inp);
             perror("due to errors not continuing with flow on current file, continue with next file...");
         }
-        printf("============================================================\n");
     }
+    free(table);
+    free(outPutFileName);
+    fclose(inp);
+    fclose(outP);
 }
 
 
@@ -107,7 +119,7 @@ bool checkIfLabel(char *line) {
     return FALSE;
 }
 
-void codeDataOrString(char *line, machineCode *mCode, int *DC, bool withLabel) {
+void codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
     /* get the string from between quotes, insert with for over len */
     char *tempLine = (char *) malloc(strlen(line) + 1);
     char *directive = (char *) malloc(strlen(line) + 1);
@@ -169,7 +181,7 @@ void codeDataOrString(char *line, machineCode *mCode, int *DC, bool withLabel) {
     }
 }
 
-bool labelAndDirectiveStep(char *line, symbol *head, int *IC, int *DC, int *errors, machineCode *mCode) {
+bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC, int *errors, machineCode *mCode) {
     bool isLabel = FALSE;
     bool isDirective = FALSE;
     char *name = (char *) malloc(strlen(line) + 1);
@@ -192,7 +204,7 @@ bool labelAndDirectiveStep(char *line, symbol *head, int *IC, int *DC, int *erro
     return FALSE;
 }
 
-void externStep(char *line, symbol *head, int *errors, int *IC) {
+void externStep(char *line, symbol *head, int *errors, long *IC) {
     size_t len;
     char *name = (char *) malloc(strlen(line) + 1);
     stringCopy(name, line);
@@ -207,15 +219,24 @@ void externStep(char *line, symbol *head, int *errors, int *IC) {
     addSymbol(name, attribs, tempNode, head, currNode, IC, line);
 }
 
-int regNumber(char *reg) {
-    return atoi(++reg);
+int regNumber(char *reg, sortType sort) {
+    if (sort == sort2) {
+        reg = strtok(reg, "[");
+        reg = strtok(NULL, ""); /* for regs in []*/
+        reg[strlen(reg) - 1] = '\0';
+    }
+    ++reg;
+    return atoi(reg);
 }
 
-bool isInt(char *string) {
+bool isInt(char *num) {
     int i = 0;
-    if (string[0] == '-' || string[0] == '+') string++;
-    for (; string[i]; i++) {
-        if (!isdigit(string[i])) {
+    if (num[0] == '-' || num[0] == '+') num++;
+    if (num[strlen(num) - 1] == '\n') {
+        num[strlen(num) - 1] = '\0';
+    }
+    for (; num[i]; i++) {
+        if (!isdigit(num[i])) {
             return FALSE;
         }
     }
@@ -224,9 +245,14 @@ bool isInt(char *string) {
 
 bool isLabel(char *operand) {
     int len;
+    int count = 0;
     len = strlen(operand);
-    while (len > 0){
-        if (!(isalpha(*operand))){
+    if (operand[len - 1] == '\n') {
+        operand[len - 1] = '\0';
+        count = 1;
+    }
+    while (len > count) {
+        if (!(isalpha(*operand) && *operand != '\0')) {
             return FALSE;
         }
         len--;
@@ -246,67 +272,153 @@ sortType getSortType(char *operand) {
     if ((strstr(operand, "[") && strstr(operand, "]"))) return sort2;
     /*register sort*/
     if (operand[0] == 'r' && atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 15 && operand[2] == '\0') return sort3;
-
+        /*did not find appropriate sort*/
     else return unsorted;
 }
 
-void setCode(machineCode *mCode, int *IC, func *f, int *L, char **parsedLine) {
-    sortType sType1;
-    sortType sType2;
+void setCode(machineCode *mCode, long *IC, func *f, int *L, char **parsedLine, char *labelName) {
+    sortType sourceSort = unsorted;
+    sortType destSort = unsorted;
+    unsigned int destReg;
+    unsigned int sourceReg;
+    mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
+    mCode[*IC].set = 'd';
+    if (labelName != NULL) {
+        mCode[*IC].labelName = (char *) malloc(strlen(labelName)+1);
+        stringCopy(mCode[*IC].labelName, labelName);
+    }
     mCode[*IC].word.data->opcode = f->opcode;
-    mCode[*IC].word.data->A = 1;
-    *L += 1;
-    mCode[*IC].word.code->funct = f->funct;
+    setARE(*IC, mCode, 1, 0, 0);
 
+    *L += 1;
+    *IC += 1;
+    mCode[*IC].word.code = (word1 *) malloc(sizeof(*mCode[*IC].word.code));
+    mCode[*IC].set = 'c';
+    mCode[*IC].word.code->funct = f->funct;
     if (f->operands == 1) {
-        sType1 = getSortType(parsedLine[1]);
+        setARE(*IC, mCode, 1, 0, 0);
+        mCode[*IC].word.code->sourceSort = 0;
+        mCode[*IC].word.code->destReg = 0;
+        mCode[*IC].word.code->sourceReg = 0;
+
+        destSort = getSortType(parsedLine[1]);
+        mCode[*IC].word.code->destSort = destSort;
+
+        if (destSort == sort3 || destSort == sort2) {
+            destReg = regNumber(parsedLine[1], destSort);
+            mCode[*IC].word.code->destReg = destReg;
+        }
     } else if (f->operands == 2) {
-        sType1 = getSortType(parsedLine[1]);
-        sType2 = getSortType(parsedLine[2]);
+        setARE(*IC, mCode, 1, 0, 0);
+        mCode[*IC].word.code->destReg = 0;
+        mCode[*IC].word.code->sourceReg = 0;
+
+        sourceSort = getSortType(parsedLine[1]);
+        destSort = getSortType(parsedLine[2]);
+        mCode[*IC].word.code->sourceSort = sourceSort;
+        mCode[*IC].word.code->destSort = destSort;
+
+        if (sourceSort == sort3 || sourceSort == sort2) {
+            sourceReg = regNumber(parsedLine[1], sourceSort);
+            mCode[*IC].word.code->sourceReg = sourceReg;
+        }
+        if (destSort == sort3 || destSort == sort2) {
+            destReg = regNumber(parsedLine[2], destSort);
+            mCode[*IC].word.code->destReg = destReg;
+        }
+    }
+    *L += 1;
+    *IC += 1;
+    if (f->operands == 1) {
+        setAdditionalLines(mCode, IC, destSort, L, parsedLine[1]);
+    } else if (f->operands == 2) {
+        setAdditionalLines(mCode, IC, sourceSort, L, parsedLine[1]);
+        setAdditionalLines(mCode, IC, destSort, L, parsedLine[2]);
     }
 }
 
-void parseCmd(char **parsedLine, int *errors, char *cmd, int *L, machineCode *mCode, int *IC) {
-    int operands;
+void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E) {
+    mCode[IC].word.data->A = A;
+    mCode[IC].word.data->R = R;
+    mCode[IC].word.data->E = E;
+}
+
+void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand) {
+    long num;
+    mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
+    mCode[*IC].set = 'd';
+    if (sort == sort0) {
+        setARE(*IC, mCode, 1, 0, 0);
+        num = strtol(++operand, NULL, 10);
+        mCode[*IC].word.data->opcode = num;
+        *L += 1;
+        *IC += 1;
+    } else if (sort == sort1 || sort == sort2) {
+        setARE(*IC, mCode, 0, 0, 0);
+        mCode[*IC].word.data->opcode = '?';/*dealt at 2nd pass*/
+        *L += 1;
+        *IC += 1;
+        mCode[*IC].word.data = (word2 *) malloc(sizeof *(mCode[*IC].word.data));
+        setARE(*IC, mCode, 0, 0, 0);
+        mCode[*IC].set = 'd';
+        mCode[*IC].word.data->opcode = '?';
+        *L += 1;
+        *IC += 1;
+    }
+}
+
+void parseCmd(char **parsedLine, int *errors, char *cmd, int *L, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
     int i;
     for (i = 0; i < 17; i++) {
         if (strstr(parsedLine[0], functions[i].name)) {
             found = TRUE;
-            operands = functions[i].operands;
             break;
         }
     }
     if (found == FALSE) *errors += 1;
+    setCode(mCode, IC, &functions[i], L, parsedLine, labelName);
+}
+
+void errorHandler(int *errors, char *currLine) {
+    char *lineForErrorHandling;
+    lineForErrorHandling = (char *) malloc(strlen(currLine));
+    strcpy(lineForErrorHandling, currLine);
+
 }
 
 bool firstPass(char *line, FILE *inp, int *errors) {
-    int IC = 100;
-    int DC = 0;
-    int zero = 0;
+    long IC = 100;
+    long DC = 0;
+    long zero = 0;
     int L;
     int ICF, DCF;
     bool is = FALSE;
     char **parsedLine;
     char *tempLine;
+    char *labelName = NULL;
     machineCode mCode[MAX_COMMANDS];
     fseek(inp, 0, SEEK_SET);
     symbol *head = malloc(sizeof(symbol));
 
     strcpy(line, iterator(line, inp, errors));
+    errorHandler(errors, line);
     while (!(strstr(line, "NULL"))) {
         printf("checking line: %s\n", line);
         is = labelAndDirectiveStep(line, head, &IC, &DC, errors, mCode);
         if (is == TRUE) {
             strcpy(line, iterator(line, inp, errors));
+            errorHandler(errors, line);
             continue;
         }
         if (checkIfEntryOrExtern(line) == 2) { /*extern*/
             externStep(line, head, errors, &zero);
             strcpy(line, iterator(line, inp, errors));
+            errorHandler(errors, line);
             continue;
         } else if (checkIfEntryOrExtern(line) == 1) {
             strcpy(line, iterator(line, inp, errors));
+            errorHandler(errors, line);
             continue;
         } /*entry - doing nothing first pass*/
 
@@ -314,39 +426,61 @@ bool firstPass(char *line, FILE *inp, int *errors) {
         tempLine = (char *) malloc(strlen(line) + 1);
         stringCopy(tempLine, line);
         if (checkIfLabel(line) == TRUE) {
-            strtok(tempLine, ":");
+            labelName = strtok(tempLine, ":");
             tempLine = strtok(NULL, "");
         }
         parsedLine = chooseParser(tempLine, errors);
-        parseCmd(parsedLine, errors, tempLine, &L, mCode, &IC);
+        parseCmd(parsedLine, errors, tempLine, &L, mCode, &IC, labelName);
+        if (labelName != NULL) {
+            free(labelName);
+            labelName = NULL;
+        }
+
 
         strcpy(line, iterator(line, inp, errors));
+        errorHandler(errors, line);
     }
 
-    /* check if label in said line */
     printf("first pass finished with %d errors", *errors);
+    printf("\n============================================================\n");
     if (*errors == 0) {
-        fclose(inp);
-        /*secondPass(line, outP, &errors);*/
+        secondPass(line, inp, errors, head, mCode, &IC, &DC);
     } else {
         fclose(inp);
-        perror("due to errors not continuing with flow on current file, continue with next file...");
+        perror("due to errors not continuing with flow on current file, continue with next file...\n");
     }
-    printf("\n============================================================\n");
-    return true;
+    free(head);
+    return TRUE;
 }
 
+void freeMachineCodes(machineCode *mCode) {
+    int counter = 100;
+    for (; counter < MAX_COMMANDS; counter++) {
+        if (mCode[counter].set != '\0') {
+            if (mCode[counter].set == 'd') free(mCode[counter].word.data);
+            else if (mCode[counter].set == 'c') free(mCode[counter].word.code);
+        }
+        counter++;
+    }
+}
 
-char **secondPass() {
-    char **parsedLine;
+bool secondPass(char *line, FILE *outP, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC) {
 
-
-    return parsedLine;
+    printf("second pass finished with %d errors", *errors);
+    printf("\n============================================================\n");
+    if (*errors == 0) {
+//        createOutPutFIles();
+    } else {
+        perror("due to errors not continuing with flow on current file, continue with next file...\n");
+    }
+    return TRUE;
 }
 
 
 int main(int argc, char **argv) {
     mainRunner(argc, argv); /* first pass returns list of .am file names, updates amount in newArgc*/
+
+
 
 
 

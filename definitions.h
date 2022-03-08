@@ -38,7 +38,7 @@ typedef enum {
     sort1 = 1, /*01 extra 2 words*/
     sort2 = 2,  /*10 extra 2 words*/
     sort3 = 3,  /*11 extra 0 words*/
-    unsorted = -1
+    unsorted = 4
 } sortType;
 
 
@@ -59,11 +59,11 @@ typedef struct {
 
 /* data consts */
 static func functions[] = {
-        {"mov",  0,  0, 2},
-        {"cmp",  1,  0, 2},
+        {"mov",  0,  0,  2},
+        {"cmp",  1,  0,  2},
         {"add",  2,  10, 2},
         {"sub",  2,  11, 2},
-        {"lea",  4,  0, 2},
+        {"lea",  4,  0,  2},
 
         {"clr",  5,  10, 1},
         {"not",  5,  11, 1},
@@ -72,11 +72,11 @@ static func functions[] = {
         {"jmp",  9,  10, 1},
         {"bne",  9,  11, 1},
         {"jsr",  9,  12, 1},
-        {"red",  12, 0, 1},
-        {"prn",  13, 0, 1},
+        {"red",  12, 0,  1},
+        {"prn",  13, 0,  1},
 
-        {"rts",  14, 0, 0},
-        {"stop", 15, 0, 0}
+        {"rts",  14, 0,  0},
+        {"stop", 15, 0,  0}
 };
 
 typedef struct word1 {
@@ -102,6 +102,8 @@ typedef struct machineCode {
         word1 *code;
         word2 *data;
     } word;
+    char set;
+    char *labelName;
 } machineCode;
 
 

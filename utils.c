@@ -221,7 +221,7 @@ void setAttrib(attribute *attribs, char *line) {
     }
 }
 
-void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, int *IC, char *line) {
+void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, long *IC, char *line) {
     int offSet = 0;
     if (*IC != 0) offSet = findOffset(*IC);
 
@@ -234,7 +234,7 @@ void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, s
     } else {
         addNodeToList(currNode, tempNode);
     }
-    *IC += *IC - offSet;
+    /* *IC += *IC - offSet;*/
 }
 
 char *iterator(char *line, FILE *inp, int *errors) {
