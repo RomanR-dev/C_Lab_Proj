@@ -2,6 +2,8 @@
 #include "utils.h"
 #include "parsers.h"
 
+#include <unistd.h>
+
 bool firstPass(char *line, FILE *inp, int *errors);
 
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand);
@@ -85,7 +87,7 @@ void mainRunner(int argc, char **argv) {
         } else outP = outputFileInit(outP, outPutFileName, argv[inputFileCounter - 1]);
 
         while (!(strstr(line, "NULL"))) {
-            strcpy(line, iterator(line, inp, &errors));
+            stringCopy(line, iterator(line, inp, &errors));
             if (strstr(line, "NULL")) break;
             preAssembler(line, &errors, inp, outP, table); /* macro handler */
         }
@@ -102,7 +104,7 @@ void mainRunner(int argc, char **argv) {
         }
     }
     free(table);
-    free(outPutFileName);
+//    free(outPutFileName);
     fclose(inp);
     fclose(outP);
 }
@@ -134,13 +136,20 @@ void codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) 
         directive = strtok(directive, " ");
     }
     if (strstr(directive, ".string")) {
+        if (withLabel == TRUE) {
+            tempLine = strtok(tempLine, ":");
+            mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
+            stringCopy(mCode[*DC].declaredLabel, tempLine);
+            stringCopy(tempLine, line);
+        }
         tempLine = strtok(tempLine, "”");
         tempLine = strtok(NULL, "");
         while (i < strlen(tempLine)) {
             if (isalnum(tempLine[i])) {
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
-                mCode[*DC].word.data->opcode = tempLine[j];
-                mCode[*DC].word.data->A = 1;
+                mCode[*DC].word.data->opcode = tempLine[i];
+                mCode[*DC].set = 'd';
+                setARE(*DC, mCode, 1, 0, 0);
                 i++, j++;
                 *DC += 1;
                 continue;
@@ -149,25 +158,32 @@ void codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) 
         }
         mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
         mCode[*DC].word.data->opcode = '\0';
-        mCode[*DC].word.data->A = 1;
+        mCode[*DC].set = 'd';
+        setARE(*DC, mCode, 1, 0, 0);
         *DC += 1;
     } else {
         bool negative = FALSE;
-        unsigned int insert;
+        int insert;
         strtok(tempLine, ".data");
-        tempLine = strtok(NULL, "");
-        tempLine = strtok(tempLine, "data");
+        if (withLabel == TRUE) {
+            tempLine[strlen(tempLine) - 2] = '\0';
+            mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
+            stringCopy(mCode[*DC].declaredLabel, tempLine);
+            tempLine = strtok(NULL, "");
+            tempLine = strtok(tempLine, "data");
+        }
         while (i < strlen(tempLine)) {
             if (isalnum(tempLine[i])) {
                 if (negative == TRUE) {
-                    insert = tempLine[j] * (-1);
+                    insert = ((tempLine[i] - '0') * (-1));
                     negative = FALSE;
                 } else {
-                    insert = tempLine[j];
+                    insert = tempLine[i] - '0';
                 }
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
                 mCode[*DC].word.data->opcode = insert;
-                mCode[*DC].word.data->A = 1;
+                mCode[*DC].set = 'd';
+                setARE(*DC, mCode, 1, 0, 0);
                 i++, j++;
                 *DC += 1;
                 continue;
@@ -200,6 +216,9 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC, int *er
     } else if (isLabel == TRUE) {
         addSymbol(name, attribs, tempNode, head, currNode, IC, line);
         return FALSE;
+    } else if (isDirective == TRUE) {
+        codeDataOrString(line, mCode, DC, isLabel);
+        return TRUE;
     }
     return FALSE;
 }
@@ -211,7 +230,9 @@ void externStep(char *line, symbol *head, int *errors, long *IC) {
     strtok(name, " ");
     name = strtok(NULL, "");
     len = strlen(name);
-    name[len - 1] = '\0';
+    if (name[len - 1] == ' ' || name[len - 1] == '\n') {
+        name[len - 1] = '\0';
+    }
     attribute *attribs = (attribute *) malloc(sizeof(attribute));
 
     symbol *currNode = head;
@@ -243,6 +264,24 @@ bool isInt(char *num) {
     return i > 0;
 }
 
+bool isValidLabelName(char *label) {
+    int i = 0;
+    char *regName = (char *) malloc(3);
+    for (; i < 16; i++) {
+        if (strstr(label, functions[i].name)) {
+            return FALSE;
+        }
+    }
+    i = 0;
+    for (; i < 16; i++) {
+        sprintf(regName, "r%d", i);
+        if (strstr(regName, label)) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 bool isLabel(char *operand) {
     int len;
     int count = 0;
@@ -251,32 +290,63 @@ bool isLabel(char *operand) {
         operand[len - 1] = '\0';
         count = 1;
     }
-    while (len > count) {
-        if (!(isalpha(*operand) && *operand != '\0')) {
-            return FALSE;
+    if (isValidLabelName(operand) == TRUE) {
+        if ((isalpha(*operand) && *operand != '\0')) {
+            len--;
+            operand++;
+            while (len > count) {
+                if (!(isalnum(*operand) && *operand != '\0')) {
+                    return FALSE;
+                }
+                len--;
+                operand++;
+            }
         }
-        len--;
-        operand++;
     }
     return TRUE;
 }
 
 sortType getSortType(char *operand) {
+    if (strstr(operand, "\n") || strstr(operand, " ")) {
+        operand[strlen(operand) - 1] = '\0';
+    }
     /* if nothing, return invalid sort */
     if (operand[0] == '\0') return unsorted;
     /*immediate sort*/
     if (operand[0] == '#' && isInt(operand + 1)) return sort0;
+    /*register sort*/
+    if (operand[0] == 'r' && ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
+                              atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0'))
+        return sort3;
     /*direct sort*/
     if (isLabel(operand) == TRUE) return sort1;
     /*index sort*/
     if ((strstr(operand, "[") && strstr(operand, "]"))) return sort2;
-    /*register sort*/
-    if (operand[0] == 'r' && atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 15 && operand[2] == '\0') return sort3;
         /*did not find appropriate sort*/
     else return unsorted;
 }
 
-void setCode(machineCode *mCode, long *IC, func *f, int *L, char **parsedLine, char *labelName) {
+void setOperandLabel(sortType destSort, sortType sourceSort, char *labelName,
+                     machineCode *mCode, char **parsedLine, long *IC, int operands) {
+    if (destSort == sort1 && (labelName == NULL || mCode[*IC-1].declaredLabel != NULL)) {
+        if (operands == 2){
+            mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[2]) + 1);
+            stringCopy(mCode[*IC - 1].labelUsage, parsedLine[2]);
+        }
+    } else if (sourceSort == sort1 && (labelName == NULL || mCode[*IC-1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
+        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
+    } else if (sourceSort == sort2 && (labelName == NULL || mCode[*IC-1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
+        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
+    } else if (destSort == sort2 && (labelName == NULL || mCode[*IC-1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
+        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
+    }
+}
+
+void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName) {
+    int L = 0;
     sortType sourceSort = unsorted;
     sortType destSort = unsorted;
     unsigned int destReg;
@@ -284,13 +354,13 @@ void setCode(machineCode *mCode, long *IC, func *f, int *L, char **parsedLine, c
     mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
     mCode[*IC].set = 'd';
     if (labelName != NULL) {
-        mCode[*IC].labelName = (char *) malloc(strlen(labelName)+1);
-        stringCopy(mCode[*IC].labelName, labelName);
+        mCode[*IC].declaredLabel = (char *) malloc(strlen(labelName) + 1);
+        stringCopy(mCode[*IC].declaredLabel, labelName);
     }
     mCode[*IC].word.data->opcode = f->opcode;
     setARE(*IC, mCode, 1, 0, 0);
 
-    *L += 1;
+    L += 1;
     *IC += 1;
     mCode[*IC].word.code = (word1 *) malloc(sizeof(*mCode[*IC].word.code));
     mCode[*IC].set = 'c';
@@ -302,12 +372,17 @@ void setCode(machineCode *mCode, long *IC, func *f, int *L, char **parsedLine, c
         mCode[*IC].word.code->sourceReg = 0;
 
         destSort = getSortType(parsedLine[1]);
+        if (destSort == sort1 && labelName == NULL) {
+            mCode[*IC - 1].declaredLabel = (char *) malloc(strlen(parsedLine[1]) + 1);
+            stringCopy(mCode[*IC - 1].declaredLabel, parsedLine[1]);
+        }
         mCode[*IC].word.code->destSort = destSort;
 
         if (destSort == sort3 || destSort == sort2) {
             destReg = regNumber(parsedLine[1], destSort);
             mCode[*IC].word.code->destReg = destReg;
         }
+        setOperandLabel(destSort, sourceSort, labelName, mCode, parsedLine, IC, f->operands);
     } else if (f->operands == 2) {
         setARE(*IC, mCode, 1, 0, 0);
         mCode[*IC].word.code->destReg = 0;
@@ -326,15 +401,17 @@ void setCode(machineCode *mCode, long *IC, func *f, int *L, char **parsedLine, c
             destReg = regNumber(parsedLine[2], destSort);
             mCode[*IC].word.code->destReg = destReg;
         }
+        setOperandLabel(destSort, sourceSort, labelName, mCode, parsedLine, IC, f->operands);
     }
-    *L += 1;
+    L += 1;
     *IC += 1;
     if (f->operands == 1) {
-        setAdditionalLines(mCode, IC, destSort, L, parsedLine[1]);
+        setAdditionalLines(mCode, IC, destSort, &L, parsedLine[1]);
     } else if (f->operands == 2) {
-        setAdditionalLines(mCode, IC, sourceSort, L, parsedLine[1]);
-        setAdditionalLines(mCode, IC, destSort, L, parsedLine[2]);
+        setAdditionalLines(mCode, IC, sourceSort, &L, parsedLine[1]);
+        setAdditionalLines(mCode, IC, destSort, &L, parsedLine[2]);
     }
+    mCode[*IC - 1].L = L;
 }
 
 void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E) {
@@ -345,15 +422,17 @@ void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsign
 
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand) {
     long num;
-    mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
-    mCode[*IC].set = 'd';
     if (sort == sort0) {
+        mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
+        mCode[*IC].set = 'd';
         setARE(*IC, mCode, 1, 0, 0);
         num = strtol(++operand, NULL, 10);
         mCode[*IC].word.data->opcode = num;
         *L += 1;
         *IC += 1;
     } else if (sort == sort1 || sort == sort2) {
+        mCode[*IC].word.data = (word2 *) malloc(sizeof(*mCode[*IC].word.data));
+        mCode[*IC].set = 'd';
         setARE(*IC, mCode, 0, 0, 0);
         mCode[*IC].word.data->opcode = '?';/*dealt at 2nd pass*/
         *L += 1;
@@ -367,7 +446,7 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
     }
 }
 
-void parseCmd(char **parsedLine, int *errors, char *cmd, int *L, machineCode *mCode, long *IC, char *labelName) {
+void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
     int i;
     for (i = 0; i < 17; i++) {
@@ -377,21 +456,19 @@ void parseCmd(char **parsedLine, int *errors, char *cmd, int *L, machineCode *mC
         }
     }
     if (found == FALSE) *errors += 1;
-    setCode(mCode, IC, &functions[i], L, parsedLine, labelName);
+    setCode(mCode, IC, &functions[i], parsedLine, labelName);
 }
 
 void errorHandler(int *errors, char *currLine) {
     char *lineForErrorHandling;
     lineForErrorHandling = (char *) malloc(strlen(currLine));
-    strcpy(lineForErrorHandling, currLine);
-
+    stringCopy(lineForErrorHandling, currLine);
 }
 
 bool firstPass(char *line, FILE *inp, int *errors) {
     long IC = 100;
     long DC = 0;
     long zero = 0;
-    int L;
     int ICF, DCF;
     bool is = FALSE;
     char **parsedLine;
@@ -401,23 +478,23 @@ bool firstPass(char *line, FILE *inp, int *errors) {
     fseek(inp, 0, SEEK_SET);
     symbol *head = malloc(sizeof(symbol));
 
-    strcpy(line, iterator(line, inp, errors));
+    stringCopy(line, iterator(line, inp, errors));
     errorHandler(errors, line);
     while (!(strstr(line, "NULL"))) {
         printf("checking line: %s\n", line);
         is = labelAndDirectiveStep(line, head, &IC, &DC, errors, mCode);
         if (is == TRUE) {
-            strcpy(line, iterator(line, inp, errors));
+            stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
             continue;
         }
         if (checkIfEntryOrExtern(line) == 2) { /*extern*/
             externStep(line, head, errors, &zero);
-            strcpy(line, iterator(line, inp, errors));
+            stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
             continue;
         } else if (checkIfEntryOrExtern(line) == 1) {
-            strcpy(line, iterator(line, inp, errors));
+            stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
             continue;
         } /*entry - doing nothing first pass*/
@@ -430,19 +507,22 @@ bool firstPass(char *line, FILE *inp, int *errors) {
             tempLine = strtok(NULL, "");
         }
         parsedLine = chooseParser(tempLine, errors);
-        parseCmd(parsedLine, errors, tempLine, &L, mCode, &IC, labelName);
+        if (parsedLine == NULL) {
+            break;
+        }
+        parseCmd(parsedLine, errors, tempLine, mCode, &IC, labelName);
         if (labelName != NULL) {
             free(labelName);
             labelName = NULL;
         }
-
-
-        strcpy(line, iterator(line, inp, errors));
+        stringCopy(line, iterator(line, inp, errors));
         errorHandler(errors, line);
     }
 
     printf("first pass finished with %d errors", *errors);
     printf("\n============================================================\n");
+
+    free(labelName);
     if (*errors == 0) {
         secondPass(line, inp, errors, head, mCode, &IC, &DC);
     } else {

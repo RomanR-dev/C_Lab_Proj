@@ -65,7 +65,7 @@ void stringCopy(char *dest, char *src) {
 
 void delay(int time) {
     int i = 0;
-    for (; i < time; i++);
+    for (; i < time*INT_MAX; i++);
 }
 
 FILE *openFile(char *fileName, FILE *inp) {
@@ -105,7 +105,7 @@ FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
 symbol *setNode(symbol *node, char *name, int IC, int baseAddr, int offset, attribute attribs) {
 
     node->name = (char *) malloc(strlen(name)); /* TODO: add the name */
-    strcpy(node->name, name);
+    stringCopy(node->name, name);
 
     node->attribs = (attribute *) malloc(sizeof(attribute));
     node->attribs->code = attribs.code;
@@ -129,7 +129,7 @@ symbol *setNode(symbol *node, char *name, int IC, int baseAddr, int offset, attr
 
 void copyNode(symbol *current, symbol *new) {
     current->name = (char *) malloc(strlen(new->name));
-    strcpy(current->name, new->name);
+    stringCopy(current->name, new->name);
     current->attribs = (attribute *) malloc(sizeof(attribute));
     current->attribs->code = new->attribs->code;
     current->attribs->data = new->attribs->data;
@@ -185,7 +185,13 @@ bool checkIfDirective(char *line) {
     int res;
     char *tempLine = (char *) malloc(strlen(line) + 1);
     stringCopy(tempLine, line);
-    strtok(tempLine, " ");
+    tempLine = strtok(tempLine, " ");
+    if (tempLine != NULL && tempLine[0] == '.'){
+        res = checkIfAttrib(tempLine); /* check if attrib*/
+        if (res == 2) {
+            return TRUE;
+        }
+    }
     tempLine = strtok(NULL, " ");
     if (tempLine != NULL && tempLine[0] == '.') {
         res = checkIfAttrib(tempLine); /* check if attrib*/
