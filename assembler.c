@@ -136,7 +136,7 @@ bool checkIfLabel(char *line) {
     return FALSE;
 }
 
-int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
+int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, long *IC) {
     int DCF = 0;
     /* get the string from between quotes, insert with for over len */
     char *tempLine = (char *) malloc(strlen(line) + 1);
@@ -144,7 +144,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
     char *directive = (char *) malloc(strlen(line) + 1);
     checkMalloc(directive);
     int i = 0;
-    int j = 0;
+    long currNum = 0;
     stringCopy(directive, line);
     stringCopy(tempLine, line);
     if (withLabel == TRUE) {
@@ -157,6 +157,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
         if (withLabel == TRUE) {
             tempLine = strtok(tempLine, ":");
             mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
+            mCode[*DC].set = 'd';
             checkMalloc(mCode[*DC].declaredLabel);
             stringCopy(mCode[*DC].declaredLabel, tempLine);
             stringCopy(tempLine, line);
@@ -170,7 +171,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
                 mCode[*DC].word.data->opcode = tempLine[i];
                 mCode[*DC].set = 'd';
                 setARE(*DC, mCode, 1, 0, 0);
-                i++, j++;
+                i++;
                 *DC += 1;
                 DCF++;
                 continue;
@@ -185,14 +186,13 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
         *DC += 1;
         DCF++;
     } else {
-        bool negative = FALSE;
-        int insert;
         strtok(tempLine, ".data");
         if (withLabel == TRUE) {
             tempLine[strlen(tempLine) - 2] = '\0';
             mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
             checkMalloc(mCode[*DC].declaredLabel);
             stringCopy(mCode[*DC].declaredLabel, tempLine);
+            mCode[*DC].set = 'd';
             tempLine = strtok(NULL, "");
             tempLine = strtok(tempLine, "data");
         } else {
@@ -201,38 +201,23 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel) {
         if (tempLine[strlen(tempLine) - 1] == '\n') {
             tempLine[strlen(tempLine) - 1] = '\0';
         }
-        if (strstr(tempLine, ",")){
+        if (strstr(tempLine, ",")) {
             tempLine = strtok(tempLine, ",");
         }
-        while (tempLine != NULL){
+        while (tempLine != NULL) {
             mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
+            mCode[*DC].set = 'd';
+            currNum = strtol(tempLine, NULL, 10);
+            mCode[*DC].word.data->opcode = currNum;
+            setARE(*DC, mCode, 1, 0, 0);
+            if (withLabel == FALSE) {
+                mCode[*IC] = mCode[*DC];
+                mCode[*DC].set = 'D';
+            }
+            *DC += 1;
+            DCF++;
             tempLine = strtok(NULL, "");
         }
-
-//        while (i < strlen(tempLine)) {
-//            if (isalnum(tempLine[i])) {
-//                if (negative == TRUE) {
-//                    insert = ((tempLine[i] - '0') * (-1));
-//                    negative = FALSE;
-//                } else {
-//                    insert = tempLine[i] - '0';
-//                }
-//                mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
-//                checkMalloc(mCode[*DC].word.data);
-//                mCode[*DC].word.data->opcode = insert;
-//                mCode[*DC].set = 'd';
-//                setARE(*DC, mCode, 1, 0, 0);
-//                i++, j++;
-//                *DC += 1;
-//                DCF++;
-//                continue;
-//            } else if (tempLine[i] == '-') {
-//                i++;
-//                negative = TRUE;
-//                continue;
-//            }
-//            i++;
-//        }
     }
     mCode[*DC - 1].L = DCF;
     return DCF;
@@ -255,14 +240,15 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC, int *er
     if (isLabel == TRUE && isDirective == TRUE) {
         *IC = *IC + *DCF;
         addSymbol(name, attribs, tempNode, head, currNode, *IC, line);
-        *DCF = codeDataOrString(line, mCode, DC, isLabel);
+        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC);
         return TRUE;
     } else if (isLabel == TRUE) {
         *IC = *IC + *DCF;
         addSymbol(name, attribs, tempNode, head, currNode, *IC, line);
         return FALSE;
     } else if (isDirective == TRUE) {
-        *DCF = codeDataOrString(line, mCode, DC, isLabel);
+        *IC = *IC + *DCF;
+        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC);
         return TRUE;
     }
     return FALSE;
@@ -531,6 +517,33 @@ void errorHandler(int *errors, char *currLine) {
     stringCopy(lineForErrorHandling, currLine);
 }
 
+void alignTables(int ICF, symbol *head, machineCode *mCode) {
+    symbol *tempNode = head;
+    int i = 0;
+    int tempCount;
+    while (tempNode->hasNext == TRUE) {
+        if (tempNode->attribs->data == TRUE) {
+            for (; i < ICF; i++) {
+                if (mCode[i].set != '\0' && mCode[i].declaredLabel != NULL &&
+                    strstr(tempNode->name, mCode[i].declaredLabel)) {
+                    tempCount = tempNode->value;
+                    mCode[tempCount] = mCode[i];
+                    while (mCode[tempCount].L == 0) {
+                        tempCount++;
+                        i++;
+                        mCode[tempCount] = mCode[i];
+                    }
+                }
+                if (tempCount == ICF) {
+                    break;
+                }
+            }
+            i = 0;
+        }
+        tempNode = tempNode->next;
+    }
+}
+
 bool firstPass(char *line, FILE *inp, int *errors) {
     long IC = 100;
     long DC = 0;
@@ -592,31 +605,8 @@ bool firstPass(char *line, FILE *inp, int *errors) {
 
     printf("first pass finished with %d errors", *errors);
     printf("\n============================================================\n");
-
     free(labelName);
-
-    ICF = IC;
-    int tempCount;
-    while (tempNode->hasNext == TRUE) {
-        if (tempNode->attribs->data == TRUE) {
-            for (; i < ICF; i++) {
-                if (mCode[i].set != '\0' && mCode[i].declaredLabel != NULL &&
-                    strstr(tempNode->name, mCode[i].declaredLabel)) {
-                    tempCount = tempNode->value;
-                    mCode[tempCount] = mCode[i];
-                    while (mCode[tempCount].L == 0) {
-                        tempCount++;
-                        i++;
-                        mCode[tempCount] = mCode[i];
-                    }
-                }
-            }
-            i = 0;
-        }
-        tempNode = tempNode->next;
-    }
-
-
+    alignTables(IC, head, mCode);
     if (*errors == 0) {
         secondPass(line, inp, errors, head, mCode, &IC, &DC);
     } else {
@@ -659,6 +649,8 @@ void entryStep(char *line, symbol *head) {
 }
 
 bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC) {
+    int i = 0;
+    symbol *tempNode = head;
     fseek(inp, 0, SEEK_SET);
 
     stringCopy(line, iterator(line, inp, errors));
@@ -669,7 +661,29 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
             continue;
         }
         stringCopy(line, iterator(line, inp, errors));
-
+    }
+    for (; i < *IC; i++) {
+        if (mCode[i].declaredLabel != NULL) {
+            while (tempNode->hasNext) {
+                if (strstr(mCode[i].declaredLabel, tempNode->name)) {
+                    while (mCode[i].L == 0) {
+                        i++;
+                        if (mCode[i].word.data->opcode == 63){ /*check if ?????? in line*/
+                            mCode[i].word.data->opcode = tempNode->baseAddress;
+                            mCode[i+1].word.data->opcode = tempNode->offset;
+                            if (tempNode->attribs->entry == TRUE){
+                                setARE(i, mCode, 0, 1, 0);
+                                setARE(i+1, mCode, 0, 1, 0);
+                            }
+                            else if (tempNode->attribs->external == TRUE){
+                                setARE(i, mCode, 0, 0, 1);
+                                setARE(i+1, mCode, 0, 0, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     printf("second pass finished with %d errors", *errors);
