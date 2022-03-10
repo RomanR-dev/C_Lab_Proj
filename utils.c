@@ -65,12 +65,12 @@ void stringCopy(char *dest, char *src) {
 
 void delay(int time) {
     int i = 0;
-    for (; i < time*INT_MAX; i++);
+    for (; i < time * INT_MAX; i++);
 }
 
 FILE *openFile(char *fileName, FILE *inp) {
-    char *error = malloc(38 + strlen(fileName));
-    char *filePath = malloc(15 + strlen(fileName));
+    char *error = malloc(40 + strlen(fileName));
+    char *filePath = malloc(17 + strlen(fileName));
     sprintf(error, "file: %s.as, returned error", fileName);
     sprintf(filePath, "../tester/%s.as", fileName);
     printf("Opening: %s...\n", filePath);
@@ -128,7 +128,7 @@ symbol *setNode(symbol *node, char *name, int IC, int baseAddr, int offset, attr
 }
 
 void copyNode(symbol *current, symbol *new) {
-    current->name = (char *) malloc(strlen(new->name));
+    current->name = (char *) malloc(strlen(new->name)+1);
     stringCopy(current->name, new->name);
     current->attribs = (attribute *) malloc(sizeof(attribute));
     current->attribs->code = new->attribs->code;
@@ -186,7 +186,7 @@ bool checkIfDirective(char *line) {
     char *tempLine = (char *) malloc(strlen(line) + 1);
     stringCopy(tempLine, line);
     tempLine = strtok(tempLine, " ");
-    if (tempLine != NULL && tempLine[0] == '.'){
+    if (tempLine != NULL && tempLine[0] == '.') {
         res = checkIfAttrib(tempLine); /* check if attrib*/
         if (res == 2) {
             return TRUE;
@@ -213,13 +213,12 @@ void setAttrib(attribute *attribs, char *line) {
         attribs->code = FALSE;
         attribs->external = TRUE;
         attribs->entry = FALSE;
-    } else if (checkIfDirective(line) == TRUE){
+    } else if (checkIfDirective(line) == TRUE) {
         attribs->data = TRUE;
         attribs->code = FALSE;
         attribs->external = FALSE;
         attribs->entry = FALSE;
-    }
-    else {
+    } else {
         attribs->data = FALSE;
         attribs->code = TRUE;
         attribs->external = FALSE;
@@ -227,13 +226,13 @@ void setAttrib(attribute *attribs, char *line) {
     }
 }
 
-void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, long *IC, char *line) {
+void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, long IC, char *line) {
     int offSet = 0;
-    if (*IC != 0) offSet = findOffset(*IC);
+    if (IC != 0) offSet = findOffset(IC);
 
     setAttrib(attribs, line);
     name = strtok(name, ":");
-    tempNode = setNode(tempNode, name, *IC, offSet, *IC - offSet, *attribs);
+    tempNode = setNode(tempNode, name, IC, offSet, IC - offSet, *attribs);
 
     if (head->isSet == FALSE) {
         copyNode(head, tempNode);
@@ -256,4 +255,8 @@ char *iterator(char *line, FILE *inp, int *errors) {
         return line;
     }
     return "NULL";
+}
+
+void printError(char *error) {
+    printf("\n%s\n", error);
 }

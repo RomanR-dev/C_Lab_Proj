@@ -15,7 +15,7 @@ FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName);
 void delay(int time); /* not necessary */
 
 void addSymbol(char *name, attribute *attribs, symbol *tempNode,
-               symbol *head, symbol *currNode, long *IC, char *line);
+               symbol *head, symbol *currNode, long IC, char *line);
 
 char *iterator(char *line, FILE *inp, int *errors);
 
@@ -30,6 +30,8 @@ bool checkIfDirective(char *line);
 int checkIfAttrib(char *attrib);
 
 int checkIfEntryOrExtern(char *line);
+
+void printError(char *error);
 
 #endif
 

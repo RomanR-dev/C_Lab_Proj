@@ -12,7 +12,6 @@
 #define MAX_LENGTH 80
 #define MAX_COMMANDS 8192
 
-
 typedef struct {
     bool code;
     bool data;
@@ -78,6 +77,8 @@ static func functions[] = {
         {"rts",  14, 0,  0},
         {"stop", 15, 0,  0}
 };
+
+#define wordSize 19
 
 typedef struct word1 {
     unsigned int destSort: 2;
