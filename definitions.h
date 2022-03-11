@@ -105,7 +105,8 @@ typedef struct machineCode {
     } word;
     char set;
     char *declaredLabel;
-    char *labelUsage;
+    char *labelUsageSource;
+    char *labelUsageDest;
     int L;
 } machineCode;
 

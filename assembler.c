@@ -4,13 +4,14 @@
 
 #include <unistd.h>
 
-bool firstPass(char *line, FILE *inp, int *errors);
+bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName);
 
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand);
 
 void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E);
 
-bool secondPass(char *line, FILE *outP, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC);
+bool secondPass(char *line, FILE *outP, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC,
+                char *outPutFileName);
 
 void freeMachineCodes(machineCode *mCode);
 
@@ -110,7 +111,7 @@ void mainRunner(int argc, char **argv) {
         inputFileCounter++;
         if (errors == 0) {
             fclose(inp);
-            firstPass(line, outP, &errors);
+            firstPass(line, outP, &errors, outPutFileName);
         } else {
             fclose(outP);
             fclose(inp);
@@ -118,7 +119,6 @@ void mainRunner(int argc, char **argv) {
         }
     }
     free(table);
-//    free(outPutFileName);
     fclose(inp);
     fclose(outP);
 }
@@ -366,22 +366,25 @@ void setOperandLabel(sortType destSort, sortType sourceSort, char *labelName,
                      machineCode *mCode, char **parsedLine, long *IC, int operands) {
     if (destSort == sort1 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
         if (operands == 2) {
-            mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[2]) + 1);
-            checkMalloc(mCode[*IC - 1].labelUsage);
-            stringCopy(mCode[*IC - 1].labelUsage, parsedLine[2]);
+            mCode[*IC - 1].labelUsageDest = (char *) malloc(strlen(parsedLine[2]) + 1);
+            checkMalloc(mCode[*IC - 1].labelUsageDest);
+            stringCopy(mCode[*IC - 1].labelUsageDest, parsedLine[2]);
         }
-    } else if (sourceSort == sort1 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
-        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
-        checkMalloc(mCode[*IC - 1].labelUsage);
-        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
-    } else if (sourceSort == sort2 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
-        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
-        checkMalloc(mCode[*IC - 1].labelUsage);
-        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
-    } else if (destSort == sort2 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
-        mCode[*IC - 1].labelUsage = (char *) malloc(strlen(parsedLine[1]) + 1);
-        checkMalloc(mCode[*IC - 1].labelUsage);
-        stringCopy(mCode[*IC - 1].labelUsage, parsedLine[1]);
+    }
+    if (sourceSort == sort1 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsageSource = (char *) malloc(strlen(parsedLine[1]) + 1);
+        checkMalloc(mCode[*IC - 1].labelUsageSource);
+        stringCopy(mCode[*IC - 1].labelUsageSource, parsedLine[1]);
+    }
+    if (sourceSort == sort2 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsageSource = (char *) malloc(strlen(parsedLine[1]) + 1);
+        checkMalloc(mCode[*IC - 1].labelUsageSource);
+        stringCopy(mCode[*IC - 1].labelUsageSource, parsedLine[1]);
+    }
+    if (destSort == sort2 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
+        mCode[*IC - 1].labelUsageDest = (char *) malloc(strlen(parsedLine[1]) + 1);
+        checkMalloc(mCode[*IC - 1].labelUsageDest);
+        stringCopy(mCode[*IC - 1].labelUsageDest, parsedLine[1]);
     }
 }
 
@@ -420,9 +423,9 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
 
         destSort = getSortType(parsedLine[1]);
         if (destSort == sort1 && labelName == NULL) {
-            mCode[*IC - 1].declaredLabel = (char *) malloc(strlen(parsedLine[1]) + 1);
-            checkMalloc(mCode[*IC - 1].declaredLabel);
-            stringCopy(mCode[*IC - 1].declaredLabel, parsedLine[1]);
+            mCode[*IC - 1].labelUsageDest = (char *) malloc(strlen(parsedLine[1]) + 1);
+            checkMalloc(mCode[*IC - 1].labelUsageDest);
+            stringCopy(mCode[*IC - 1].labelUsageDest, parsedLine[1]);
         }
         mCode[*IC].word.code->destSort = destSort;
 
@@ -500,13 +503,19 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
 void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
     int i;
+    if (cmd[strlen(cmd) - 1] == '\n') {
+        cmd[strlen(cmd) - 1] = '\0';
+    }
     for (i = 0; i < 17; i++) {
-        if (strstr(parsedLine[0], functions[i].name)) {
+        if (strstr(parsedLine[0], functions[i].name) && strstr(functions[i].name, parsedLine[0])) {
             found = TRUE;
             break;
         }
     }
-    if (found == FALSE) *errors += 1;
+    if (found == FALSE) {
+        printf("Error: CMD: [ %s ] not found\n", cmd);
+        *errors += 1;
+    }
     setCode(mCode, IC, &functions[i], parsedLine, labelName);
 }
 
@@ -544,7 +553,7 @@ void alignTables(int ICF, symbol *head, machineCode *mCode) {
     }
 }
 
-bool firstPass(char *line, FILE *inp, int *errors) {
+bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     long IC = 100;
     long DC = 0;
     long zero = 0;
@@ -608,7 +617,7 @@ bool firstPass(char *line, FILE *inp, int *errors) {
     free(labelName);
     alignTables(IC, head, mCode);
     if (*errors == 0) {
-        secondPass(line, inp, errors, head, mCode, &IC, &DC);
+        secondPass(line, inp, errors, head, mCode, &IC, &DC, outPutFileName);
     } else {
         fclose(inp);
         printf("due to errors not continuing with flow on current file, continue with next file...\n");
@@ -648,7 +657,109 @@ void entryStep(char *line, symbol *head) {
     }
 }
 
-bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC) {
+void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
+    while (tempNode->hasNext) {
+        if (labelUsage != NULL && strstr(labelUsage, tempNode->name)) {
+            while (mCode[i].L == 0) {
+                i++;
+                if (mCode[i].word.data->opcode == 63) { /*check if ?????? in line*/
+                    mCode[i].word.data->opcode = tempNode->baseAddress;
+                    mCode[i + 1].word.data->opcode = tempNode->offset;
+                    if (tempNode->attribs->external == TRUE) {
+                        setARE(i, mCode, 0, 0, 1);
+                        setARE(i + 1, mCode, 0, 0, 1);
+                    } else {
+                        setARE(i, mCode, 0, 1, 0);
+                        setARE(i + 1, mCode, 0, 1, 0);
+                    }
+                }
+            }
+        }
+        tempNode = tempNode->next;
+    }
+}
+
+void createOutPutFileNames(char *orig, char *ext, char *ent, char *ob) {
+    int len;
+    stringCopy(ext, orig);
+    stringCopy(ent, orig);
+    stringCopy(ob, orig);
+    len = strlen(ext);
+    ext[len - 2] = 'e';
+    ext[len - 1] = 'x';
+    ext[len] = 't';
+    ext[len + 1] = '\0';
+    ent[len - 2] = 'e';
+    ent[len - 1] = 'n';
+    ent[len] = 't';
+    ent[len + 1] = '\0';
+    ob[len - 2] = 'o';
+    ob[len - 1] = 'b';
+
+}
+
+void createEntryFile(char *fileName, symbol *head) {
+    FILE *file = fopen(fileName, "w+");
+    symbol *tempNode = head;
+    while (tempNode->hasNext) {
+        if (tempNode->attribs->entry == TRUE) {
+            fprintf(file, "%s,%d,%d\n", tempNode->name, tempNode->baseAddress, tempNode->offset);
+        }
+        tempNode = tempNode->next;
+    }
+    fclose(file);
+}
+
+void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
+    FILE *file = fopen(fileName, "w+");
+    symbol *tempNode = head;
+    int i = 100;
+    int base;
+    int offset;
+    while (tempNode->isSet) {
+        if (tempNode->attribs->external == TRUE) {
+            i = 100;
+            while (mCode[i].set != '\0') {
+                if (mCode[i].labelUsageDest != NULL && strstr(mCode[i].labelUsageDest, tempNode->name)) {
+                    while (mCode[i].L == 0) {
+                        i++;
+                    }
+                    base = i - 1;
+                    offset = base + 1;
+                }
+                if (mCode[i].labelUsageSource != NULL && strstr(mCode[i].labelUsageSource, tempNode->name)) {
+                    base = i + 2;
+                    offset = base + 1;
+                }
+                i++;
+            }
+            fprintf(file, "%s BASE %d\n%s OFFSET %d\n\n", tempNode->name, base, tempNode->name, offset);
+        }
+        if (tempNode->hasNext) {
+            tempNode = tempNode->next;
+        } else {
+            break;
+        }
+    }
+    fclose(file);
+}
+
+bool createOutPutFiles(machineCode *mCode, symbol *head, char *outPutFileName) {
+    char *extFileName = (char *) malloc(strlen(outPutFileName) + 1);
+    char *entFileName = (char *) malloc(strlen(outPutFileName) + 1);
+    char *obFileName = (char *) malloc(strlen(outPutFileName));
+    int i;
+
+    createOutPutFileNames(outPutFileName, extFileName, entFileName, obFileName);
+
+    createEntryFile(entFileName, head);
+    createExternFile(extFileName, head, mCode);
+
+    return TRUE;
+}
+
+bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC,
+                char *outPutFileName) {
     int i = 0;
     symbol *tempNode = head;
     fseek(inp, 0, SEEK_SET);
@@ -663,34 +774,23 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
         stringCopy(line, iterator(line, inp, errors));
     }
     for (; i < *IC; i++) {
-        if (mCode[i].declaredLabel != NULL) {
-            while (tempNode->hasNext) {
-                if (strstr(mCode[i].declaredLabel, tempNode->name)) {
-                    while (mCode[i].L == 0) {
-                        i++;
-                        if (mCode[i].word.data->opcode == 63){ /*check if ?????? in line*/
-                            mCode[i].word.data->opcode = tempNode->baseAddress;
-                            mCode[i+1].word.data->opcode = tempNode->offset;
-                            if (tempNode->attribs->entry == TRUE){
-                                setARE(i, mCode, 0, 1, 0);
-                                setARE(i+1, mCode, 0, 1, 0);
-                            }
-                            else if (tempNode->attribs->external == TRUE){
-                                setARE(i, mCode, 0, 0, 1);
-                                setARE(i+1, mCode, 0, 0, 1);
-                            }
-                        }
-                    }
-                }
-            }
+        if (mCode[i].labelUsageSource != NULL) {
+            fillBlanks(tempNode, mCode, i, mCode[i].labelUsageSource);
+            tempNode = head;
+        }
+        if (mCode[i].labelUsageDest != NULL) {
+            fillBlanks(tempNode, mCode, i, mCode[i].labelUsageDest);
+            tempNode = head;
         }
     }
 
     printf("second pass finished with %d errors", *errors);
     printf("\n============================================================\n");
     if (*errors == 0) {
-//        createOutPutFIles();
+        fclose(inp);
+        createOutPutFiles(mCode, head, outPutFileName);
     } else {
+        fclose(inp);
         printError("due to errors not continuing with flow on current file, continue with next file...\n");
     }
     return TRUE;
