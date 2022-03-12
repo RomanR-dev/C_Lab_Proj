@@ -78,8 +78,6 @@ static func functions[] = {
         {"stop", 15, 0,  0}
 };
 
-#define wordSize 19
-
 typedef struct word1 {
     unsigned int destSort: 2;
     unsigned int destReg: 4;
