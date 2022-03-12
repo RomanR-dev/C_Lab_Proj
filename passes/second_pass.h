@@ -1,6 +1,6 @@
-#include "misc/definitions.h"
-#include "misc/utils.h"
-#include "misc/parsers.h"
+#include "../misc/definitions.h"
+#include "../misc/utils.h"
+#include "../misc/parsers.h"
 #include "pre_assembler.h"
 
 
@@ -18,5 +18,5 @@ void entryStep(char *line, symbol *head);
 
 void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage);
 
-bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC,
+bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, const long *IC,
                 char *outPutFileName, int *dataCounter);

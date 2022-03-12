@@ -1,5 +1,6 @@
 #include "definitions.h"
 #include "utils.h"
+#include "definitions.c"
 
 
 /* parser funcs for asm code */
@@ -29,8 +30,8 @@ char **parseNoOperands(char *input) {
 
 int getOperandsCount(char *cmd, int *errors) {
     int numOfFuncs;
-    numOfFuncs = sizeof(functions) / sizeof(functions[0]);
     int i;
+    numOfFuncs = sizeof(functions) / sizeof(functions[0]);
     for (i = 0; i < numOfFuncs; i++) {
         if (strstr(cmd, functions[i].name)) {
             return functions[i].operands;
@@ -62,7 +63,6 @@ char **chooseParser(char *input, int *errors) {
     }
     return parsedLine;
 }
-
 
 void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
@@ -150,7 +150,7 @@ sortType getSortType(char *operand) { /*TODO check why sporadic failures right h
     if (operand[0] == '#' && isInt(operand + 1)) return sort0;
     /*register sort*/
     if (operand[0] == 'r' && ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
-                              atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0')) {
+                              (atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0'))) {
         return sort3;
     }
     /*direct sort*/

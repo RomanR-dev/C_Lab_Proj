@@ -1,6 +1,6 @@
-#include "misc/definitions.h"
-#include "misc/utils.h"
-#include "misc/parsers.h"
+#include "../misc/definitions.h"
+#include "../misc/utils.h"
+#include "../misc/parsers.h"
 #include "pre_assembler.h"
 
 

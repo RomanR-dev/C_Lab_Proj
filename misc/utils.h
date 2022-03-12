@@ -6,8 +6,6 @@ char *concatenate(char **toConCat, int max);
 
 void printWrittenLine(int opCount, char **parsedLine);
 
-bool lineSplitterFuncAndConcatenate(char **parsedLine, int opCount, char *line, int errors);
-
 void lstrip(char *l);
 
 void stringCopy(char *dest, char *src);
@@ -48,8 +46,8 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
 
 int regNumber(char *reg, sortType sort);
 
-void setOperandLabel(sortType destSort, sortType sourceSort, char *labelName,
-                     machineCode *mCode, char **parsedLine, long *IC, int operands);
+void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelName,
+                     machineCode *mCode, char **parsedLine, const long *IC, int operands);
 
 void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName);
 
@@ -59,23 +57,27 @@ void errorHandler(int *errors, char *currLine);
 
 long power(int num, int times);
 
-long convertBinToHex4Bit(char *binNumber, int bit);
+long convertBinToHex4Bit(const char *binNumber, int bit);
 
-long convertBinToHex16Bit(char *binNumber, int bit);
+long convertBinToHex16Bit(const char *binNumber, int bit);
 
 char intToChar(unsigned int num);
 
 long convertBinToHex(char *binNumber, int bit);
 
-char *decToBin(char *binNumber, unsigned int number);
+char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine);
 
-long assign4BitBinNumber(char *binNumber, char *binNumber16, int start, long letter);
+long assign4BitBinNumber(char *binNumber, const char *binNumber16, int start, long letter);
 
 void resetArray(char *array, int size);
 
 void resetArrays(char *binNumber, char *binNumber16);
 
-void freeMachineCodes(machineCode *mCode);
+void freeMachineCodes(machineCode *mCode, int IC);
+
+void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC);
+
+void freemallocsMainRunner(macroTable *table, FILE *inp, FILE *outP);
 
 #endif
 

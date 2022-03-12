@@ -1,5 +1,5 @@
-#include "misc/definitions.h"
-#include "misc/utils.h"
+#include "../misc/definitions.h"
+#include "../misc/utils.h"
 #include "pre_assembler.h"
 
 void set19_16_bit_data(char *binNumber, machineCode *mCode, int i) {
@@ -18,7 +18,7 @@ void set19_16_bit_code(char *binNumber, machineCode *mCode, int i) {
 
 void set15_0_bit_data(char *binNumber, char *binNumber16, machineCode *mCode, int i,
                       long *A, long *B, long *C, long *D, long *E) {
-    binNumber16 = decToBin(binNumber16, mCode[i].word.data->opcode);
+    binNumber16 = decToBin(binNumber16, mCode[i].word.data->opcode, mCode[i].additionalLine);
     *A = convertBinToHex(binNumber, 4);
     resetArray(binNumber, 4);
     *B = assign4BitBinNumber(binNumber, binNumber16, 0, *B);
@@ -51,23 +51,23 @@ void setDataTo16BitWord(char *binNumber16, const char *binNumber, int start16, i
 
 void prepare15_to_0_bits(char *binNumber16, char *binNumber, machineCode *mCode, int i) {
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->funct);
+    binNumber = decToBin(binNumber, mCode[i].word.code->funct, TRUE);
     setDataTo16BitWord(binNumber16, binNumber, 0, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->sourceReg);
+    binNumber = decToBin(binNumber, mCode[i].word.code->sourceReg, TRUE);
     setDataTo16BitWord(binNumber16, binNumber, 4, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->sourceSort);
+    binNumber = decToBin(binNumber, mCode[i].word.code->sourceSort, TRUE);
     setDataTo16BitWord(binNumber16, binNumber, 8, 2, 2);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->destReg);
+    binNumber = decToBin(binNumber, mCode[i].word.code->destReg, TRUE);
     setDataTo16BitWord(binNumber16, binNumber, 10, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->destSort);
+    binNumber = decToBin(binNumber, mCode[i].word.code->destSort, TRUE);
     setDataTo16BitWord(binNumber16, binNumber, 14, 2, 2);
 
     resetArray(binNumber, 4);
@@ -80,7 +80,7 @@ void createObFile(char *fileName, machineCode *mCode, int dataCounter, int IC) {
     char *binNumber16 = (char *) malloc(sizeof(char) * 16);
     FILE *file = fopen(fileName, "w+");
     fprintf(file, "%d %d\n", IC - dataCounter - 99, dataCounter);
-    while (mCode[i].set != '\0') {
+    while (i <= IC && mCode[i].set != '0') {
         resetArrays(binNumber, binNumber16);
         if (mCode[i].set == 'd' || mCode[i].set == 'D') {
             set19_16_bit_data(binNumber, mCode, i);
@@ -91,7 +91,6 @@ void createObFile(char *fileName, machineCode *mCode, int dataCounter, int IC) {
             prepare15_to_0_bits(binNumber16, binNumber, mCode, i);
             set15_0_bit_code(binNumber16, binNumber, &B, &C, &D, &E);
         }
-
         fprintf(file, "%04d    A%lx-B%lx-C%lx-D%lx-E%lx\n", i, A, B, C, D, E);
         i++;
     }
@@ -102,7 +101,7 @@ void createEntryFile(char *fileName, symbol *head) {
     bool createdFile = FALSE;
     FILE *file;
     symbol *tempNode = head;
-    while (tempNode->hasNext) {
+    while (tempNode->isSet == TRUE) {
         if (tempNode->attribs->entry == TRUE) {
             if (createdFile == FALSE) {
                 file = fopen(fileName, "w+");
@@ -110,9 +109,15 @@ void createEntryFile(char *fileName, symbol *head) {
             }
             fprintf(file, "%s,%d,%d\n", tempNode->name, tempNode->baseAddress, tempNode->offset);
         }
-        tempNode = tempNode->next;
+        if (tempNode->hasNext == TRUE) {
+            tempNode = tempNode->next;
+        } else {
+            break;
+        }
     }
-    fclose(file);
+    if (createdFile == TRUE) {
+        fclose(file);
+    }
 }
 
 void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
@@ -122,7 +127,7 @@ void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
     int i;
     int base;
     int offset;
-    while (tempNode->isSet) {
+    while (tempNode->isSet == TRUE) {
         if (tempNode->attribs->external == TRUE) {
             if (createdFile == FALSE) {
                 file = fopen(fileName, "w+");
@@ -145,13 +150,15 @@ void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
             }
             fprintf(file, "%s BASE %d\n%s OFFSET %d\n\n", tempNode->name, base, tempNode->name, offset);
         }
-        if (tempNode->hasNext) {
+        if (tempNode->hasNext == TRUE) {
             tempNode = tempNode->next;
         } else {
             break;
         }
     }
-    fclose(file);
+    if (createdFile == TRUE) {
+        fclose(file);
+    }
 }
 
 void createOutPutFileNames(char *orig, char *ext, char *ent, char *ob) {
@@ -185,9 +192,9 @@ bool createOutPutFiles(machineCode *mCode, symbol *head, char *outPutFileName, i
 }
 
 void entryStep(char *line, symbol *head) {
+    char *tempLine = (char *) malloc(strlen(line) + 1);
     symbol *temp;
     temp = head;
-    char *tempLine = (char *) malloc(strlen(line) + 1);
     checkMalloc(tempLine);
     stringCopy(tempLine, line);
     strtok(tempLine, " ");
@@ -195,17 +202,21 @@ void entryStep(char *line, symbol *head) {
     if (tempLine[strlen(tempLine) - 1] == ' ' || tempLine[strlen(tempLine) - 1] == '\n') {
         tempLine[strlen(tempLine) - 1] = '\0';
     }
-    while (temp->hasNext == TRUE) {
+    while (temp->isSet == TRUE) {
         if (strstr(temp->name, tempLine)) {
             temp->attribs->entry = TRUE;
             break;
         }
-        temp = temp->next;
+        if (temp->hasNext == TRUE) {
+            temp = temp->next;
+        } else {
+            break;
+        }
     }
 }
 
 void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
-    while (tempNode->hasNext) {
+    while (tempNode->isSet == TRUE) {
         if (labelUsage != NULL && strstr(labelUsage, tempNode->name)) {
             while (mCode[i].L == 0) {
                 i++;
@@ -222,15 +233,12 @@ void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
                 }
             }
         }
-        tempNode = tempNode->next;
+        if (tempNode->hasNext == TRUE) {
+            tempNode = tempNode->next;
+        } else {
+            break;
+        }
     }
-}
-
-void freeMallocs(machineCode *mCode, symbol *head, char *outPutFileName, char *line) {
-    freeMachineCodes(mCode);
-    free(head);
-    free(outPutFileName);
-    free(line);
 }
 
 bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, const long *IC,
@@ -238,7 +246,6 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
     int i = 0;
     symbol *tempNode = head;
     fseek(inp, 0, SEEK_SET);
-
     stringCopy(line, iterator(line, inp, errors));
     while (!(strstr(line, "NULL"))) {
         if (checkIfEntryOrExtern(line) == 1) {
@@ -259,8 +266,11 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
         }
     }
 
-    printf("second pass finished with %d errors", *errors);
-    printf("\n============================================================\n");
+    printf("\n===>>>>>> Second pass finished with %d errors\n", *errors);
+    if (*IC > MAX_COMMANDS) {
+        *errors += 1;
+        printError("Max commands has exceeded limit");
+    }
     if (*errors == 0) {
         fclose(inp);
         createOutPutFiles(mCode, head, outPutFileName, *dataCounter, *IC);
@@ -268,6 +278,6 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
         fclose(inp);
         printError("due to errors not continuing with flow on current file, continue with next file...\n");
     }
-    freeMallocs(mCode, head, outPutFileName, line);
+    freeMallocsFromPasses(mCode, head, *IC);
     return TRUE;
 }

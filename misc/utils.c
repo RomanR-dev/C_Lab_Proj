@@ -2,46 +2,6 @@
 #include "parsers.h"
 
 /* utils */
-char *concatenate(char **toConCat, int max) {
-    char *line = malloc(80);
-    switch (max) {
-        case 0:
-            strcpy(line, toConCat[0]);
-            break;
-        case 1:
-            strcpy(line, toConCat[0]);
-            strcat(line, " ");
-            strcat(line, toConCat[1]);
-            break;
-        case 2:
-            strcpy(line, toConCat[0]);
-            strcat(line, " ");
-            strcat(line, toConCat[1]);
-            strcat(line, ", ");
-            strcat(line, toConCat[2]);
-            break;
-    }
-    return line;
-}
-
-void printWrittenLine(int opCount, char **parsedLine) {
-    int i = 0;
-    for (; i <= opCount; i++) {
-        printf("%s%s", parsedLine[i], i < opCount ? " " : "");
-    }
-}
-
-bool lineSplitterFuncAndConcatenate(char **parsedLine, int opCount, char *line, int errors) {
-    parsedLine = chooseParser(line, &errors); /* parse line to get command and operands */
-    if (!parsedLine) return FALSE;
-    opCount = getOperandsCount(parsedLine[0], &errors); /* check how many operands per command is defined */
-    if (opCount == -1) return FALSE;
-
-    printWrittenLine(opCount, parsedLine); /* for debug purposes */
-    strcpy(line, concatenate(parsedLine, opCount)); /* concat split line and copy it to the line str */
-    return TRUE;
-}
-
 void lstrip(char *l) {
     int i = 0;
     int j = 0;
@@ -237,7 +197,7 @@ void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, s
     name = strtok(name, ":");
     tempNode = setNode(tempNode, name, IC, offSet, IC - offSet, *attribs);
 
-    if (head->isSet == FALSE) {
+    if (head->isSet != TRUE) {
         copyNode(head, tempNode);
     } else {
         addNodeToList(currNode, tempNode);
@@ -273,7 +233,7 @@ void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsign
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand) {
     long num;
     if (sort == sort0) {
-        mCode[*IC].word.data = (word2 *) malloc(sizeof(mCode[*IC].word));
+        mCode[*IC].word.data = (word2 *) malloc(sizeof(word2));
         checkMalloc(mCode[*IC].word.data);
         mCode[*IC].set = 'd';
         setARE(*IC, mCode, 1, 0, 0);
@@ -282,18 +242,20 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
         *L += 1;
         *IC += 1;
     } else if (sort == sort1 || sort == sort2) {
-        mCode[*IC].word.data = (word2 *) malloc(sizeof(mCode[*IC].word));
+        mCode[*IC].word.data = (word2 *) malloc(sizeof(word1));
         checkMalloc(mCode[*IC].word.data);
         mCode[*IC].set = 'd';
         setARE(*IC, mCode, 0, 0, 0);
         mCode[*IC].word.data->opcode = '?';/*dealt at 2nd pass*/
+        mCode[*IC].additionalLine = TRUE;
         *L += 1;
         *IC += 1;
-        mCode[*IC].word.data = (word2 *) malloc(sizeof(mCode[*IC].word));
+        mCode[*IC].word.data = (word2 *) malloc(sizeof(word2));
         checkMalloc(mCode[*IC].word.data);
         setARE(*IC, mCode, 0, 0, 0);
         mCode[*IC].set = 'd';
         mCode[*IC].word.data->opcode = '?';
+        mCode[*IC].additionalLine = TRUE;
         *L += 1;
         *IC += 1;
     }
@@ -341,7 +303,7 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
     sortType destSort = unsorted;
     unsigned int destReg;
     unsigned int sourceReg;
-    mCode[*IC].word.data = (word2 *) malloc(sizeof(mCode[*IC].word));
+    mCode[*IC].word.data = (word2 *) malloc(sizeof(word2));
     checkMalloc(mCode[*IC].word.data);
     mCode[*IC].set = 'd';
     if (labelName != NULL) {
@@ -358,7 +320,7 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
         mCode[*IC - 1].L = L;
         return;
     }
-    mCode[*IC].word.code = (word1 *) malloc(sizeof(mCode[*IC].word));
+    mCode[*IC].word.code = (word1 *) malloc(sizeof(word1));
     checkMalloc(mCode[*IC].word.code);
     mCode[*IC].set = 'c';
     mCode[*IC].word.code->funct = f->funct;
@@ -470,10 +432,70 @@ long convertBinToHex(char *binNumber, int bit) {
     return -1;
 }
 
-char *decToBin(char *binNumber, unsigned int number) {
-    int i;
-    int len;
-    len = strlen(binNumber);
+int getTimesToPower(int number) {
+    if (number == 0 || number == 4 || number == 8 || number == 12) {
+        return 0;
+    }
+    if (number == 1 || number == 5 || number == 9 || number == 13) {
+        return 1;
+    }
+    if (number == 2 || number == 6 || number == 10 || number == 14) {
+        return 2;
+    }
+    if (number == 3 || number == 7 || number == 11 || number == 15) {
+        return 2;
+    }
+    return 0;
+}
+
+int getTheNumberIn4BitSection(unsigned int number) {
+    if (number == 0 || number == 4 || number == 8 || number == 12) {
+        return 0;
+    }
+    if (number == 1 || number == 5 || number == 9 || number == 13) {
+        return 1;
+    }
+    if (number == 2 || number == 6 || number == 10 || number == 14) {
+        return 2;
+    }
+    if (number == 3 || number == 7 || number == 11 || number == 15) {
+        return 3;
+    }
+    return -1;
+}
+
+int get16BitWordSection(unsigned int number) {
+    if (number == 0 || number == 1 || number == 2 || number == 3) {
+        return 16;
+    }
+    if (number == 4 || number == 5 || number == 6 || number == 7) {
+        return 12;
+    }
+    if (number == 8 || number == 9 || number == 10 || number == 11) {
+        return 8;
+    }
+    if (number == 12 || number == 13 || number == 14 || number == 15) {
+        return 4;
+    }
+    return 16;
+}
+
+char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine) {
+    int num1, num2, len, i;
+    len = get16BitWordSection(number);
+    if (isAdditionalLine != TRUE) {
+        num1 = getTheNumberIn4BitSection(number);
+        if (num1 != -1) {
+            num2 = getTimesToPower(number);
+            number = power(num1, num2);
+            if (num1 == 0 && num2 == 0) number = 1;
+            if (num1 == 1 && num2 == 1) number = 2;
+        }
+
+    } else if (isAdditionalLine == TRUE) {
+        len = 16;
+    }
+    if (strlen(binNumber) == 4) len = 4;
     for (i = len - 1; number > 0; i--) {
         binNumber[i] = intToChar(number % 2);
         number = number / 2;
@@ -500,13 +522,56 @@ void resetArrays(char *binNumber, char *binNumber16) {
     resetArray(binNumber16, 16);
 }
 
-void freeMachineCodes(machineCode *mCode) {
-    int counter = 100;
-    for (; counter < MAX_COMMANDS; counter++) {
-        if (mCode[counter].set != '\0') {
-            if (mCode[counter].set == 'd') free(mCode[counter].word.data);
-            else if (mCode[counter].set == 'c') free(mCode[counter].word.code);
+void freeMachineCodes(machineCode *mCode, int IC) {
+    int counter = 0;
+    for (; counter < IC; counter++) {
+//        if (mCode[counter].set != '\0') {
+//            if (mCode[counter].set == 'd') {
+//                mCode[counter].word.data = malloc(1);
+//                free(mCode[counter].word.data);
+//            } else if (mCode[counter].set == 'c') {
+//                mCode[counter].word.code = malloc(1);
+//                free(mCode[counter].word.code);
+//            }
+//            if (mCode[counter].declaredLabel != NULL && isalpha(*mCode[counter].declaredLabel)) free(mCode[counter].declaredLabel);
+//            if (mCode[counter].labelUsageDest != NULL) free(mCode[counter].labelUsageDest);
+//            if (mCode[counter].labelUsageSource != NULL) free(mCode[counter].labelUsageSource);
+//            mCode[counter].set = '0';
+//            mCode[counter].L = -1;
+//            mCode[counter].additionalLine = -1;
+//        }
+        mCode[counter].set = '0';
+        mCode[counter].L = 0;
+        mCode[counter].additionalLine = 0;
+        mCode[counter].labelUsageDest = NULL;
+        mCode[counter].labelUsageSource = NULL;
+        mCode[counter].declaredLabel = NULL;
+        if (mCode[counter].word.data != NULL) {
+            mCode[counter].word.data->opcode = 0;
+            mCode[counter].word.data->A = 0;
+            mCode[counter].word.data->R = 0;
+            mCode[counter].word.data->E = 0;
         }
-        counter++;
+        if (mCode[counter].word.code != NULL) {
+            mCode[counter].word.code->funct = 0;
+            mCode[counter].word.code->A = 0;
+            mCode[counter].word.code->R = 0;
+            mCode[counter].word.code->E = 0;
+            mCode[counter].word.code->destReg = 0;
+            mCode[counter].word.code->sourceReg = 0;
+            mCode[counter].word.code->destSort = 0;
+            mCode[counter].word.code->sourceSort = 0;
+        }
     }
+}
+
+void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC) {
+    freeMachineCodes(mCode, IC);
+    free(head);
+}
+
+void freemallocsMainRunner(macroTable *table, FILE *inp, FILE *outP) {
+    free(table);
+    fclose(inp);
+    fclose(outP);
 }

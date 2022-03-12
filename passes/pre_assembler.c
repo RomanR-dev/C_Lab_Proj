@@ -1,6 +1,6 @@
-#include "misc/definitions.h"
-#include "misc/utils.h"
-#include "misc/parsers.h"
+#include "../misc/definitions.h"
+#include "../misc/utils.h"
+#include "../misc/parsers.h"
 
 macroTable *addMacro(macroTable *table, char *name, char **cmd, int numOfCmds) {
     int i = 0;
@@ -45,8 +45,8 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
     if (strstr(line, "macro")) {
         char **tempLine = (char **) malloc(1);
         char *macroName = (char *) malloc(74);
-        checkMalloc(macroName);
         int counter = 0;
+        checkMalloc(macroName);
         strtok(line, " ");
         stringCopy(macroName, strtok(NULL, ":"));
         if (macroName[strlen(macroName) - 1] == '\n') macroName[strlen(macroName) - 1] = '\0';
@@ -77,7 +77,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
     }
     /* if written macro continue to next line, else write the line as is to new file */
     writeResult = macroWriter(line, table, outP);
-    if (!writeResult && endm == false) {
+    if (!writeResult && endm == FALSE) {
         fprintf(outP, "%s", line);
     }
 }

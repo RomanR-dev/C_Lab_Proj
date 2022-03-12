@@ -1,6 +1,6 @@
-#include "misc/definitions.h"
-#include "misc/utils.h"
-#include "misc/parsers.h"
+#include "../misc/definitions.h"
+#include "../misc/utils.h"
+#include "../misc/parsers.h"
 #include "pre_assembler.h"
 #include "second_pass.h"
 
@@ -8,11 +8,11 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
     int DCF = 0;
     /* get the string from between quotes, insert with for over len */
     char *tempLine = (char *) malloc(strlen(line) + 1);
-    checkMalloc(tempLine);
     char *directive = (char *) malloc(strlen(line) + 1);
-    checkMalloc(directive);
     int i = 0;
     long currNum;
+    checkMalloc(tempLine);
+    checkMalloc(directive);
     stringCopy(directive, line);
     stringCopy(tempLine, line);
     if (withLabel == TRUE) {
@@ -95,13 +95,13 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
                            int *errors, machineCode *mCode, int *DCF, int *dataCounter) {
     bool isLabel = FALSE;
     bool isDirective = FALSE;
+    symbol *currNode = head;
+    symbol *tempNode = (symbol *) malloc(sizeof(symbol));
+    attribute *attribs = (attribute *) malloc(sizeof(attribute));
     char *name = (char *) malloc(strlen(line) + 1);
     checkMalloc(name);
     stringCopy(name, line);
-    attribute *attribs = (attribute *) malloc(sizeof(attribute));
     checkMalloc(attribs);
-    symbol *currNode = head;
-    symbol *tempNode = (symbol *) malloc(sizeof(symbol));
     checkMalloc(tempNode);
 
     isLabel = checkIfLabel(line);
@@ -128,6 +128,9 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
 void externStep(char *line, symbol *head, int *errors, long IC) {
     size_t len;
     char *name = (char *) malloc(strlen(line) + 1);
+    attribute *attribs = (attribute *) malloc(sizeof(attribute));
+    symbol *currNode = head;
+    symbol *tempNode = (symbol *) malloc(sizeof(symbol));
     checkMalloc(name);
     stringCopy(name, line);
     strtok(name, " ");
@@ -136,11 +139,8 @@ void externStep(char *line, symbol *head, int *errors, long IC) {
     if (name[len - 1] == ' ' || name[len - 1] == '\n') {
         name[len - 1] = '\0';
     }
-    attribute *attribs = (attribute *) malloc(sizeof(attribute));
     checkMalloc(attribs);
 
-    symbol *currNode = head;
-    symbol *tempNode = (symbol *) malloc(sizeof(symbol));
     checkMalloc(tempNode);
     addSymbol(name, attribs, tempNode, head, currNode, IC, line);
 }
@@ -149,7 +149,7 @@ void alignTables(int ICF, symbol *head, machineCode *mCode) {
     symbol *tempNode = head;
     int i = 0;
     int tempCount;
-    while (tempNode->hasNext == TRUE) {
+    while (tempNode->isSet == TRUE) {
         if (tempNode->attribs->data == TRUE) {
             for (; i < ICF; i++) {
                 if (mCode[i].set != '\0' && mCode[i].declaredLabel != NULL &&
@@ -168,7 +168,11 @@ void alignTables(int ICF, symbol *head, machineCode *mCode) {
             }
             i = 0;
         }
-        tempNode = tempNode->next;
+        if (tempNode->hasNext == TRUE) {
+            tempNode = tempNode->next;
+        } else {
+            break;
+        }
     }
 }
 
@@ -177,20 +181,20 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     long DC = 0;
     long zero = 0;
     int DCF = 0;
-    bool is = FALSE;
+    bool is;
     char **parsedLine;
     char *tempLine;
     char *labelName = NULL;
     int dataCounter = 0;
     machineCode mCode[MAX_COMMANDS];
-    fseek(inp, 0, SEEK_SET);
     symbol *head = malloc(sizeof(symbol));
+    fseek(inp, 0, SEEK_SET);
     checkMalloc(head);
 
     stringCopy(line, iterator(line, inp, errors));
     errorHandler(errors, line);
     while (!(strstr(line, "NULL"))) {
-        printf("checking line: %s\n", line);
+        /*printf("checking line: %s\n", line);*/
         is = labelAndDirectiveStep(line, head, &IC, &DC, errors, mCode, &DCF, &dataCounter);
         if (is == TRUE) {
             stringCopy(line, iterator(line, inp, errors));
@@ -229,8 +233,7 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         errorHandler(errors, line);
     }
 
-    printf("first pass finished with %d errors", *errors);
-    printf("\n============================================================\n");
+    printf("\n===>>>>>> First pass finished with %d errors\n", *errors);
     free(labelName);
     alignTables(IC, head, mCode);
     if (*errors == 0) {
@@ -239,6 +242,5 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         fclose(inp);
         printf("due to errors not continuing with flow on current file, continue with next file...\n");
     }
-    free(head);
     return TRUE;
 }

@@ -1,20 +1,21 @@
 #include "misc/definitions.h"
 #include "misc/utils.h"
-#include "pre_assembler.h"
-#include "first_pass.h"
+#include "passes/pre_assembler.h"
+#include "passes/first_pass.h"
 
 void mainRunner(int argc, char **argv) {
     int errors = 0;
     int inputFileCounter = 1;
     char line[MAX_LENGTH];
     char *outPutFileName = malloc(sizeof(char));
-    checkMalloc(outPutFileName);
     macroTable *table = malloc(sizeof(macroTable));
-    checkMalloc(table);
     FILE *outP;
     FILE *inp;
+    checkMalloc(outPutFileName);
+    checkMalloc(table);
 
     while (inputFileCounter < argc) { /* iterate over files from argv .as */
+        memset(line, '0', 4);
         if ((inp = inputFileInit(argv, inp, &inputFileCounter)) == NULL) {
             printf("file not found, skipping to next");
             continue;
@@ -25,9 +26,7 @@ void mainRunner(int argc, char **argv) {
             if (strstr(line, "NULL")) break;
             preAssembler(line, &errors, inp, outP, table); /* macro handler */
         }
-        printf("pre assembler finished: %s, errors: %d", argv[inputFileCounter - 1], errors);
-        printf("\n============================================================\n");
-        inputFileCounter++;
+        printf("===>>>>>> Pre assembler finished: %s, errors: %d\n", argv[inputFileCounter - 1], errors);
         if (errors == 0) {
             fclose(inp);
             firstPass(line, outP, &errors, outPutFileName);
@@ -36,20 +35,13 @@ void mainRunner(int argc, char **argv) {
             fclose(inp);
             printf("due to errors not continuing with flow on current file, continue with next file...");
         }
+        printf("\n===>>>>>> Finished file: %s <<<<<<===\n", outPutFileName);
+        printf("======================================================================\n\n");
     }
-    free(table);
-    fclose(inp);
-    fclose(outP);
+    freemallocsMainRunner(table, inp, outP);
 }
 
 int main(int argc, char **argv) {
     mainRunner(argc, argv); /* first pass returns list of .am file names, updates amount in newArgc*/
-
-
-
-
-
-
-//    free(newArgv);
     return 0;
 }
