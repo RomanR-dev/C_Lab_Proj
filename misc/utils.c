@@ -301,7 +301,7 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
 
 int regNumber(char *reg, sortType sort) {
     if (sort == sort2) {
-        reg = strtok(reg, "[");
+        strtok(reg, "[");
         reg = strtok(NULL, ""); /* for regs in []*/
         reg[strlen(reg) - 1] = '\0';
     }
@@ -309,8 +309,8 @@ int regNumber(char *reg, sortType sort) {
     return atoi(reg);
 }
 
-void setOperandLabel(sortType destSort, sortType sourceSort, char *labelName,
-                     machineCode *mCode, char **parsedLine, long *IC, int operands) {
+void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelName,
+                     machineCode *mCode, char **parsedLine, const long *IC, int operands) {
     if (destSort == sort1 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
         if (operands == 2) {
             mCode[*IC - 1].labelUsageDest = (char *) malloc(strlen(parsedLine[2]) + 1);
@@ -426,7 +426,7 @@ long power(int num, int times) {
     return num;
 }
 
-long convertBinToHex4Bit(char *binNumber, int bit) {
+long convertBinToHex4Bit(const char *binNumber, int bit) {
     long dec = 0;
     int i;
     for (i = bit - 1; i >= 0; i--) {
@@ -441,7 +441,7 @@ long convertBinToHex4Bit(char *binNumber, int bit) {
     return dec;
 }
 
-long convertBinToHex16Bit(char *binNumber, int bit) {
+long convertBinToHex16Bit(const char *binNumber, int bit) {
     long dec = 0;
     int i;
     for (i = bit; i > -1; i--) {
@@ -481,11 +481,32 @@ char *decToBin(char *binNumber, unsigned int number) {
     return binNumber;
 }
 
-long assign4BitBinNumber(char *binNumber, char *binNumber16, int start, long letter) {
+long assign4BitBinNumber(char *binNumber, const char *binNumber16, int start, long letter) {
     int i = 0;
     for (; i < 4; i++, start++) {
         binNumber[i] = binNumber16[start];
     }
     letter = convertBinToHex(binNumber, 4);
     return letter;
+}
+
+void resetArray(char *array, int size) {
+    memset(array, '0', size);
+    array[size] = '\0';
+}
+
+void resetArrays(char *binNumber, char *binNumber16) {
+    resetArray(binNumber, 4);
+    resetArray(binNumber16, 16);
+}
+
+void freeMachineCodes(machineCode *mCode) {
+    int counter = 100;
+    for (; counter < MAX_COMMANDS; counter++) {
+        if (mCode[counter].set != '\0') {
+            if (mCode[counter].set == 'd') free(mCode[counter].word.data);
+            else if (mCode[counter].set == 'c') free(mCode[counter].word.code);
+        }
+        counter++;
+    }
 }

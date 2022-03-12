@@ -1,20 +1,7 @@
 #include "misc/definitions.h"
 #include "misc/utils.h"
-#include "misc/parsers.h"
 #include "pre_assembler.h"
 #include "first_pass.h"
-
-
-void freeMachineCodes(machineCode *mCode) {
-    int counter = 100;
-    for (; counter < MAX_COMMANDS; counter++) {
-        if (mCode[counter].set != '\0') {
-            if (mCode[counter].set == 'd') free(mCode[counter].word.data);
-            else if (mCode[counter].set == 'c') free(mCode[counter].word.code);
-        }
-        counter++;
-    }
-}
 
 void mainRunner(int argc, char **argv) {
     int errors = 0;
@@ -54,7 +41,6 @@ void mainRunner(int argc, char **argv) {
     fclose(inp);
     fclose(outP);
 }
-
 
 int main(int argc, char **argv) {
     mainRunner(argc, argv); /* first pass returns list of .am file names, updates amount in newArgc*/

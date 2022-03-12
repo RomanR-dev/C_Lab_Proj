@@ -4,7 +4,7 @@
 #include "pre_assembler.h"
 #include "second_pass.h"
 
-int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, long *IC) {
+int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, const long *IC) {
     int DCF = 0;
     /* get the string from between quotes, insert with for over len */
     char *tempLine = (char *) malloc(strlen(line) + 1);
@@ -12,11 +12,11 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, l
     char *directive = (char *) malloc(strlen(line) + 1);
     checkMalloc(directive);
     int i = 0;
-    long currNum = 0;
+    long currNum;
     stringCopy(directive, line);
     stringCopy(tempLine, line);
     if (withLabel == TRUE) {
-        directive = strtok(directive, ":");
+        strtok(directive, ":");
         directive = strtok(NULL, " ");
     } else {
         directive = strtok(directive, " ");
@@ -30,7 +30,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, l
             stringCopy(mCode[*DC].declaredLabel, tempLine);
             stringCopy(tempLine, line);
         }
-        tempLine = strtok(tempLine, "”");
+        strtok(tempLine, "”");
         tempLine = strtok(NULL, "");
         while (i < strlen(tempLine)) {
             if (isalnum(tempLine[i])) {
@@ -185,7 +185,6 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     machineCode mCode[MAX_COMMANDS];
     fseek(inp, 0, SEEK_SET);
     symbol *head = malloc(sizeof(symbol));
-    symbol *tempNode = head;
     checkMalloc(head);
 
     stringCopy(line, iterator(line, inp, errors));
@@ -235,7 +234,7 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     free(labelName);
     alignTables(IC, head, mCode);
     if (*errors == 0) {
-        secondPass(line, inp, errors, head, mCode, &IC, &DC, outPutFileName, &dataCounter);
+        secondPass(line, inp, errors, head, mCode, &IC, outPutFileName, &dataCounter);
     } else {
         fclose(inp);
         printf("due to errors not continuing with flow on current file, continue with next file...\n");

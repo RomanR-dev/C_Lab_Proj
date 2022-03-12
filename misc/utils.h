@@ -71,5 +71,11 @@ char *decToBin(char *binNumber, unsigned int number);
 
 long assign4BitBinNumber(char *binNumber, char *binNumber16, int start, long letter);
 
+void resetArray(char *array, int size);
+
+void resetArrays(char *binNumber, char *binNumber16);
+
+void freeMachineCodes(machineCode *mCode);
+
 #endif
 

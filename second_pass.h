@@ -18,5 +18,5 @@ void entryStep(char *line, symbol *head);
 
 void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage);
 
-bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC, long *DC,
+bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, long *IC,
                 char *outPutFileName, int *dataCounter);
