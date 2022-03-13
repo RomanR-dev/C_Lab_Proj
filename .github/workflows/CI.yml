@@ -27,9 +27,13 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: build project
-        run: make
-
-      # Runs a set of commands using the runners shell
+        run: |
+          echo building project
+          make
+          ls
+          ./assembler ps
+          
+#       Runs a set of commands using the runners shell
 #       - name: Run a multi-line script
 #         run: |
 #           echo Add other actions to build,
