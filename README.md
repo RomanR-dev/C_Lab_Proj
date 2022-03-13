@@ -1,4 +1,4 @@
-https://github.com/AvivNaaman/C_Lab_Proj/workflows/CI/badge.svg?branch=main
+![Build](https://github.com/AvivNaaman/C_Lab_Proj/workflows/CI/badge.svg?branch=main)
 
 Systems lab course in the open university:
     C language (C90) - project
