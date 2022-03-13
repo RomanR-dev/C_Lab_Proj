@@ -1,4 +1,4 @@
-[![CI](https://github.com/RomanR-dev/C_Lab_Proj/actions/workflows/CI.yml/badge.svg)](https://github.com/RomanR-dev/C_Lab_Proj/actions/workflows/CI.yml)
+https://github.com/AvivNaaman/C_Lab_Proj/workflows/CI/badge.svg?branch=main
 
 Systems lab course in the open university:
     C language (C90) - project
