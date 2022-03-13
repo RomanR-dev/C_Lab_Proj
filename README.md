@@ -8,7 +8,5 @@ project done according to project book that is
 provided by the university.
 
 
-====
 run "make" command from cmd while under C_Lab_Proj root directory
-run ./assember <fileName1> <fileName2> <fileName3>  etc...
-====
+run ./assember <fileName1> <fileName2> <fileName3>  etc..
