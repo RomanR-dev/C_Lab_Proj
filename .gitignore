@@ -56,3 +56,4 @@ dkms.conf
 CMakeLists.txt
 cmake-build-debug/*
 tester/*.txt
+assembler
