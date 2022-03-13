@@ -26,6 +26,7 @@ void mainRunner(int argc, char **argv) {
             if (strstr(line, "NULL")) break;
             preAssembler(line, &errors, inp, outP, table); /* macro handler */
         }
+        free(table);
         printf("===>>>>>> Pre assembler finished: %s, errors: %d\n", argv[inputFileCounter - 1], errors);
         if (errors == 0) {
             fclose(inp);
@@ -38,10 +39,9 @@ void mainRunner(int argc, char **argv) {
         printf("\n===>>>>>> Finished file: %s <<<<<<===\n", outPutFileName);
         printf("======================================================================\n\n");
     }
-    freemallocsMainRunner(table, inp, outP);
 }
 
 int main(int argc, char **argv) {
-    mainRunner(argc, argv); /* first pass returns list of .am file names, updates amount in newArgc*/
+    mainRunner(argc, argv);
     return 0;
 }

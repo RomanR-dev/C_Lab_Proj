@@ -1,37 +1,7 @@
+flags = -Wall -pedantic -ansi
+misc = misc/definitions.h misc/definitions.c misc/parsers.h misc/parsers.c misc/utils.h misc/utils.c
+passes = passes/first_pass.h passes/first_pass.c passes/second_pass.h passes/second_pass.c passes/pre_assembler.h passes/pre_assembler.c
+dotCfiles = misc/definitions.c misc/parsers.c misc/utils.c passes/first_pass.c passes/second_pass.c passes/pre_assembler.c
 
-# Basic compilation macros
-CC = gcc # GCC Compiler
-CFLAGS = -ansi -Wall -pedantic # Flags
-GLOBAL_DEPS = misc/utils.h misc/parsers.h misc/definitions.h # Dependencies for everything
-EXE_DEPS = assembler.o passes/pre_assembler.o passes/second_pass.o passes/first_pass.o misc/parsers.o misc/utils.o misc/definitions.o # Deps for exe
-
-assembler: $(EXE_DEPS) $(GLOBAL_DEPS)
-	$(CC) -g $(EXE_DEPS) $(CFLAGS) -o $@
-
-assembler.o: assembler.c $(GLOBAL_DEPS)
-	$(CC) -c assembler.c $(CFLAGS) -o $@
-
-code.o: utils.c utils.h $(GLOBAL_DEPS)
-	$(CC) -c utils.c $(CFLAGS) -o $@
-
-fpass.o: first_pass.c first_pass.h $(GLOBAL_DEPS)
-	$(CC) -c first_pass.c $(CFLAGS) -o $@
-
-spass.o: second_pass.c second_pass.h $(GLOBAL_DEPS)
-	$(CC) -c second_pass.c $(CFLAGS) -o $@
-
-instructions.o: parsers.c parsers.h $(GLOBAL_DEPS)
-	$(CC) -c parsers.c $(CFLAGS) -o $@
-
-table.o: definitions.c definitions.h $(GLOBAL_DEPS)
-	$(CC) -c definitions.c $(CFLAGS) -o $@
-
-utils.o: utils.c instructions.h $(GLOBAL_DEPS)
-	$(CC) -c utils.c $(CFLAGS) -o $@
-
-writefiles.o: pre_assembler.c pre_assembler.h $(GLOBAL_DEPS)
-	$(CC) -c pre_assembler.c $(CFLAGS) -o $@
-
-# Clean Target (remove leftovers)
-clean:
-	rm -rf *.o
+assembler: ${misc} ${passes}
+	gcc ${flags} -o assembler ${dotCfiles} assembler.c -lm

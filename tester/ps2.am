@@ -1,3 +1,4 @@
-clr r1
-.entry L
-L: clr r2
+.entry LIST
+MAIN: add r3, LIST
+.entry MAIN
+LIST: .data 6, -9

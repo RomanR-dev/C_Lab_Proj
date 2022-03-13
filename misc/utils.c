@@ -27,7 +27,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     char *error = malloc(40 + strlen(fileName));
     char *filePath = malloc(17 + strlen(fileName));
     sprintf(error, "file: %s.as, returned error", fileName);
-    sprintf(filePath, "../tester/%s.as", fileName);
+    sprintf(filePath, "tester/%s.as", fileName);
     printf("Opening: %s...\n", filePath);
     inp = fopen(filePath, "r");
     if (inp == NULL) {
@@ -51,7 +51,7 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
 }
 
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
-    sprintf(outPutFileName, "../tester/%s.am", inputName);
+    sprintf(outPutFileName, "tester/%s.am", inputName);
     printf("Creating output file: %s\n", outPutFileName);
     outP = fopen(outPutFileName, "w+");
     return outP;
@@ -525,21 +525,21 @@ void resetArrays(char *binNumber, char *binNumber16) {
 void freeMachineCodes(machineCode *mCode, int IC) {
     int counter = 0;
     for (; counter < IC; counter++) {
-//        if (mCode[counter].set != '\0') {
-//            if (mCode[counter].set == 'd') {
-//                mCode[counter].word.data = malloc(1);
-//                free(mCode[counter].word.data);
-//            } else if (mCode[counter].set == 'c') {
-//                mCode[counter].word.code = malloc(1);
-//                free(mCode[counter].word.code);
-//            }
-//            if (mCode[counter].declaredLabel != NULL && isalpha(*mCode[counter].declaredLabel)) free(mCode[counter].declaredLabel);
-//            if (mCode[counter].labelUsageDest != NULL) free(mCode[counter].labelUsageDest);
-//            if (mCode[counter].labelUsageSource != NULL) free(mCode[counter].labelUsageSource);
-//            mCode[counter].set = '0';
-//            mCode[counter].L = -1;
-//            mCode[counter].additionalLine = -1;
-//        }
+       /*if (mCode[counter].set != '\0') {
+           if (mCode[counter].set == 'd') {
+               mCode[counter].word.data = malloc(1);
+               free(mCode[counter].word.data);
+           } else if (mCode[counter].set == 'c') {
+               mCode[counter].word.code = malloc(1);
+               free(mCode[counter].word.code);
+           }
+           if (mCode[counter].declaredLabel != NULL && isalpha(*mCode[counter].declaredLabel)) free(mCode[counter].declaredLabel);
+           if (mCode[counter].labelUsageDest != NULL) free(mCode[counter].labelUsageDest);
+           if (mCode[counter].labelUsageSource != NULL) free(mCode[counter].labelUsageSource);
+           mCode[counter].set = '0';
+           mCode[counter].L = -1;
+           mCode[counter].additionalLine = -1;
+       }*/
         mCode[counter].set = '0';
         mCode[counter].L = 0;
         mCode[counter].additionalLine = 0;
@@ -570,8 +570,3 @@ void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC) {
     free(head);
 }
 
-void freemallocsMainRunner(macroTable *table, FILE *inp, FILE *outP) {
-    free(table);
-    fclose(inp);
-    fclose(outP);
-}

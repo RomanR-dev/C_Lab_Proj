@@ -77,7 +77,5 @@ void freeMachineCodes(machineCode *mCode, int IC);
 
 void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC);
 
-void freemallocsMainRunner(macroTable *table, FILE *inp, FILE *outP);
-
 #endif
 
