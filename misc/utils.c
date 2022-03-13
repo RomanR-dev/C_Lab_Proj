@@ -27,7 +27,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     char *error = malloc(40 + strlen(fileName));
     char *filePath = malloc(17 + strlen(fileName));
     sprintf(error, "file: %s.as, returned error", fileName);
-    sprintf(filePath, "tester/%s.as", fileName);
+    sprintf(filePath, "../%s.as", fileName);
     printf("Opening: %s...\n", filePath);
     inp = fopen(filePath, "r");
     if (inp == NULL) {
@@ -51,7 +51,7 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
 }
 
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
-    sprintf(outPutFileName, "tester/%s.am", inputName);
+    sprintf(outPutFileName, "../tester/%s.am", inputName);
     printf("Creating output file: %s\n", outPutFileName);
     outP = fopen(outPutFileName, "w+");
     return outP;
