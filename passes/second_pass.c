@@ -241,6 +241,50 @@ void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
     }
 }
 
+bool checkLabel(const char *label, symbol *tempNode, bool found, int *errors) {
+    if (label != NULL) {
+        while (tempNode->isSet == TRUE) {
+            if (strstr(tempNode->name,label)) {
+                found = TRUE;
+            }
+            if (tempNode->hasNext == TRUE) {
+                tempNode = tempNode->next;
+            } else {
+                break;
+            }
+        }
+        if (found == FALSE) {
+            *errors += 1;
+            return FALSE;
+        } else {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void assertLabelsDeclaration(int *errors, machineCode *mCode, const long *IC, symbol *head) {
+    int i = 0;
+    int err;
+    symbol *tempNode;
+    bool found = FALSE;
+    err = *errors;
+    for (; i < *IC; i++) {
+        tempNode = head;
+        found = checkLabel(mCode[i].labelUsageSource, tempNode, found, errors);
+        if (*errors > err) {
+            err = *errors;
+            printf("--->Usage of undeclared label found: %s, error\n", mCode[i].labelUsageSource);
+        }
+        tempNode = head;
+        found = checkLabel(mCode[i].labelUsageDest, tempNode, found, errors);
+        if (*errors > err) {
+            err = *errors;
+            printf("--->Usage of undeclared label found: %s, error\n", mCode[i].labelUsageDest);
+        }
+    }
+}
+
 bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, const long *IC,
                 char *outPutFileName, const int *dataCounter) {
     int i = 0;
@@ -265,8 +309,9 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
             tempNode = head;
         }
     }
+    assertLabelsDeclaration(errors, mCode, IC, head);
 
-    printf("\n===>>>>>> Second pass finished with %d errors\n", *errors);
+    printf("===>>>>>> Second pass finished: Errors: %d\n", *errors);
     if (*IC > MAX_COMMANDS) {
         *errors += 1;
         printError("Max commands has exceeded limit");
@@ -276,7 +321,7 @@ bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *m
         createOutPutFiles(mCode, head, outPutFileName, *dataCounter, *IC);
     } else {
         fclose(inp);
-        printError("due to errors not continuing with flow on current file, continue with next file...\n");
+        printError("due to errors not continuing with flow on current file, continue with next file...");
     }
     freeMallocsFromPasses(mCode, head, *IC);
     return TRUE;

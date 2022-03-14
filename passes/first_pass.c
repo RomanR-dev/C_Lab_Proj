@@ -4,7 +4,7 @@
 #include "pre_assembler.h"
 #include "second_pass.h"
 
-int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, const long *IC) {
+int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, const long *IC, int *errors) {
     int DCF = 0;
     /* get the string from between quotes, insert with for over len */
     char *tempLine = (char *) malloc(strlen(line) + 1);
@@ -32,6 +32,11 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
         }
         strtok(tempLine, "”");
         tempLine = strtok(NULL, "");
+        if (tempLine == NULL) {
+            printf("--->No characters after .string declaration\n");
+            *errors += 1;
+            return 0;
+        }
         while (i < strlen(tempLine)) {
             if (isalnum(tempLine[i])) {
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
@@ -55,6 +60,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
         DCF++;
     } else {
         strtok(tempLine, ".data");
+        swapLastCharIfNewLine(tempLine);
         if (withLabel == TRUE) {
             tempLine[strlen(tempLine) - 2] = '\0';
             mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
@@ -65,6 +71,11 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
             tempLine = strtok(tempLine, "data");
         } else {
             tempLine = strtok(tempLine, ".data");
+        }
+        if (tempLine == NULL) {
+            printf("--->No data after .data declaration\n");
+            *errors += 1;
+            return 0;
         }
         if (tempLine[strlen(tempLine) - 1] == '\n') {
             tempLine[strlen(tempLine) - 1] = '\0';
@@ -91,25 +102,44 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
     return DCF;
 }
 
+bool assertLabelProperDeclaration(char *line) {
+    char *tempLine = (char *) malloc(strlen(line) + 1);
+    checkMalloc(tempLine);
+    stringCopy(tempLine, line);
+    swapLastCharIfNewLine(tempLine);
+    strtok(tempLine, ":");
+    if (strtok(NULL, "") == NULL) return FALSE;
+    return TRUE;
+}
+
 bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
                            int *errors, machineCode *mCode, int *DCF, int *dataCounter) {
-    bool isLabel = FALSE;
-    bool isDirective = FALSE;
+    bool isLabel;
+    bool isDirective;
     symbol *currNode = head;
     symbol *tempNode = (symbol *) malloc(sizeof(symbol));
     attribute *attribs = (attribute *) malloc(sizeof(attribute));
     char *name = (char *) malloc(strlen(line) + 1);
+
     checkMalloc(name);
-    stringCopy(name, line);
     checkMalloc(attribs);
     checkMalloc(tempNode);
+    stringCopy(name, line);
 
     isLabel = checkIfLabel(line);
     isDirective = checkIfDirective(line);
+    if (isLabel == TRUE) {
+        if (assertLabelProperDeclaration(line) == FALSE) {
+            *errors += 1;
+            swapLastCharIfNewLine(line);
+            printf("--->Undefined label: %s\n", line);
+            return FALSE;
+        }
+    }
     if (isLabel == TRUE && isDirective == TRUE) {
         *IC = *IC + *DCF;
         addSymbol(name, attribs, tempNode, head, currNode, *IC, line);
-        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC);
+        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC, errors);
         *dataCounter += *DCF;
         return TRUE;
     } else if (isLabel == TRUE) {
@@ -118,7 +148,7 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
         return FALSE;
     } else if (isDirective == TRUE) {
         *IC = *IC + *DCF;
-        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC);
+        *DCF = codeDataOrString(line, mCode, DC, isLabel, IC, errors);
         *dataCounter += *DCF;
         return TRUE;
     }
@@ -194,7 +224,6 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     stringCopy(line, iterator(line, inp, errors));
     errorHandler(errors, line);
     while (!(strstr(line, "NULL"))) {
-        /*printf("checking line: %s\n", line);*/
         is = labelAndDirectiveStep(line, head, &IC, &DC, errors, mCode, &DCF, &dataCounter);
         if (is == TRUE) {
             stringCopy(line, iterator(line, inp, errors));
@@ -222,7 +251,9 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         }
         parsedLine = chooseParser(tempLine, errors);
         if (parsedLine == NULL) {
-            break;
+            stringCopy(line, iterator(line, inp, errors));
+            errorHandler(errors, line);
+            continue;
         }
         parseCmd(parsedLine, errors, tempLine, mCode, &IC, labelName);
         if (labelName != NULL) {
@@ -233,14 +264,14 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         errorHandler(errors, line);
     }
 
-    printf("\n===>>>>>> First pass finished with %d errors\n", *errors);
+    printf("===>>>>>> First pass finished: Errors: %d\n", *errors);
     free(labelName);
-    alignTables(IC, head, mCode);
     if (*errors == 0) {
+        alignTables(IC, head, mCode);
         secondPass(line, inp, errors, head, mCode, &IC, outPutFileName, &dataCounter);
     } else {
         fclose(inp);
-        printf("due to errors not continuing with flow on current file, continue with next file...\n");
+        printError("due to errors not continuing with flow on current file, continue with next file...");
     }
     return TRUE;
 }

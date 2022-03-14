@@ -54,7 +54,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
             if (*line == '\n') continue;
             if (strlen(line) > 80) {
                 errors += 1;
-                printf("line to long\n");
+                printf("--->line to long\n");
                 continue;
             }
             if (strstr(line, "endm")) {
@@ -69,10 +69,13 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
             counter++;
             if (strstr(line, macroName)) {
                 *errors += 1;
-                printError(
-                        "macro doesnt have a closure with 'endm' will not create am file and continue with process.");
+                printf("--->macro doesnt have a closure with 'endm' (found macro call) will not create am file and continue with process.\n");
                 break;
             }
+        }
+        if (endm == FALSE) {
+            *errors += 1;
+            printf("--->macro doesnt have a closure with 'endm' (end of code) will not create am file and continue with process.\n");
         }
     }
     /* if written macro continue to next line, else write the line as is to new file */

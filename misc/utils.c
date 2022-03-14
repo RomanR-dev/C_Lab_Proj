@@ -2,6 +2,19 @@
 #include "parsers.h"
 
 /* utils */
+void swapLastCharIfNewLine(char *string) {
+    int len;
+    len = strlen(string);
+    if (string[len] == '\n') {
+        string[len] = '\0';
+        return;
+    }
+    if (string[len - 1] == '\n') {
+        string[len - 1] = '\0';
+        return;
+    }
+}
+
 void lstrip(char *l) {
     int i = 0;
     int j = 0;
@@ -28,7 +41,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     char *filePath = malloc(17 + strlen(fileName));
     sprintf(error, "file: %s.as, returned error", fileName);
     sprintf(filePath, "../%s.as", fileName);
-    printf("Opening: %s...\n", filePath);
+    printf("Processing: %s\n", filePath);
     inp = fopen(filePath, "r");
     if (inp == NULL) {
         perror(error);
@@ -52,7 +65,6 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
 
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
     sprintf(outPutFileName, "../tester/%s.am", inputName);
-    printf("Creating output file: %s\n", outPutFileName);
     outP = fopen(outPutFileName, "w+");
     return outP;
 }
@@ -109,7 +121,7 @@ symbol *addNodeToList(symbol *head, symbol *node) {
 
 bool checkMalloc(void *ptr) {
     if (ptr == NULL) {
-        printf("malloc failed\n");
+        printf("--->malloc failed\n");
         return FALSE;
     }
     return TRUE;
@@ -148,6 +160,7 @@ bool checkIfDirective(char *line) {
     int res;
     char *tempLine = (char *) malloc(strlen(line) + 1);
     stringCopy(tempLine, line);
+    swapLastCharIfNewLine(tempLine);
     tempLine = strtok(tempLine, " ");
     if (tempLine != NULL && tempLine[0] == '.') {
         res = checkIfAttrib(tempLine); /* check if attrib*/
@@ -205,11 +218,11 @@ void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, s
     /* *IC += *IC - offSet;*/
 }
 
-char *iterator(char *line, FILE *inp, int *errors) {
+char *iterator(char *line, FILE *inp, const int *errors) {
     while ((fgets(line, MAX_LENGTH, inp)) != NULL) { /* read from .as file and save macro data to .am file */
         if (strlen(line) > MAX_LENGTH) {
             errors += 1;
-            printf("line to long\n");
+            printf("--->line to long\n");
             continue;
         }
         if (line[0] == '\n') continue;
@@ -221,7 +234,7 @@ char *iterator(char *line, FILE *inp, int *errors) {
 }
 
 void printError(char *error) {
-    printf("\n%s\n", error);
+    printf("\n--->%s\n", error);
 }
 
 void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E) {
@@ -297,7 +310,7 @@ void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelNa
     }
 }
 
-void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName) {
+void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName, int *errors) {
     int L = 0;
     sortType sourceSort = unsorted;
     sortType destSort = unsorted;
@@ -330,7 +343,7 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
         mCode[*IC].word.code->destReg = 0;
         mCode[*IC].word.code->sourceReg = 0;
 
-        destSort = getSortType(parsedLine[1]);
+        destSort = getSortType(parsedLine[1], errors);
         if (destSort == sort1 && labelName == NULL) {
             mCode[*IC - 1].labelUsageDest = (char *) malloc(strlen(parsedLine[1]) + 1);
             checkMalloc(mCode[*IC - 1].labelUsageDest);
@@ -348,8 +361,8 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
         mCode[*IC].word.code->destReg = 0;
         mCode[*IC].word.code->sourceReg = 0;
 
-        sourceSort = getSortType(parsedLine[1]);
-        destSort = getSortType(parsedLine[2]);
+        sourceSort = getSortType(parsedLine[1], errors);
+        destSort = getSortType(parsedLine[2], errors);
         mCode[*IC].word.code->sourceSort = sourceSort;
         mCode[*IC].word.code->destSort = destSort;
 
@@ -525,21 +538,6 @@ void resetArrays(char *binNumber, char *binNumber16) {
 void freeMachineCodes(machineCode *mCode, int IC) {
     int counter = 0;
     for (; counter < IC; counter++) {
-       /*if (mCode[counter].set != '\0') {
-           if (mCode[counter].set == 'd') {
-               mCode[counter].word.data = malloc(1);
-               free(mCode[counter].word.data);
-           } else if (mCode[counter].set == 'c') {
-               mCode[counter].word.code = malloc(1);
-               free(mCode[counter].word.code);
-           }
-           if (mCode[counter].declaredLabel != NULL && isalpha(*mCode[counter].declaredLabel)) free(mCode[counter].declaredLabel);
-           if (mCode[counter].labelUsageDest != NULL) free(mCode[counter].labelUsageDest);
-           if (mCode[counter].labelUsageSource != NULL) free(mCode[counter].labelUsageSource);
-           mCode[counter].set = '0';
-           mCode[counter].L = -1;
-           mCode[counter].additionalLine = -1;
-       }*/
         mCode[counter].set = '0';
         mCode[counter].L = 0;
         mCode[counter].additionalLine = 0;
@@ -569,4 +567,3 @@ void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC) {
     freeMachineCodes(mCode, IC);
     free(head);
 }
-

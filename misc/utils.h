@@ -2,9 +2,7 @@
 #define _UTILS_
 
 /* utils */
-char *concatenate(char **toConCat, int max);
-
-void printWrittenLine(int opCount, char **parsedLine);
+void swapLastCharIfNewLine(char *string);
 
 void lstrip(char *l);
 
@@ -36,7 +34,7 @@ void setAttrib(attribute *attribs, char *line);
 
 void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, long IC, char *line);
 
-char *iterator(char *line, FILE *inp, int *errors);
+char *iterator(char *line, FILE *inp, const int *errors);
 
 void printError(char *error);
 
@@ -49,7 +47,7 @@ int regNumber(char *reg, sortType sort);
 void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelName,
                      machineCode *mCode, char **parsedLine, const long *IC, int operands);
 
-void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName);
+void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName, int *errors);
 
 bool checkIfLabel(char *line);
 

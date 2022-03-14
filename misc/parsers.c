@@ -1,6 +1,7 @@
 #include "definitions.h"
 #include "utils.h"
 #include "definitions.c"
+#include "utils.h"
 
 
 func functions[] = {
@@ -26,41 +27,90 @@ func functions[] = {
 
 /* parser funcs for asm code */
 char **parseWith2Operands(char *input) {
+    bool hasDelim = FALSE;
     char **line = malloc(1);
+    if (strstr(input, ",")) hasDelim = TRUE;
     lstrip(input);
     line[0] = strtok(input, " ");
-    line[1] = strtok(NULL, ",");
+    if (hasDelim == TRUE) {
+        line[1] = strtok(NULL, ",");
+    } else {
+        line[1] = strtok(NULL, " ");
+    }
     line[2] = strtok(NULL, " ");
     return line;
 }
 
 char **parseWith1Operand(char *input) {
+    bool hasDelim = FALSE;
     char **line = malloc(1);
+    if (strstr(input, ",")) hasDelim = TRUE;
     lstrip(input);
     line[0] = strtok(input, " ");
-    line[1] = strtok(NULL, ",");
+    if (hasDelim == TRUE) {
+        line[1] = strtok(NULL, ",");
+    } else {
+        line[1] = strtok(NULL, " ");
+    }
+    line[2] = strtok(NULL, " ");
     return line;
 }
 
 char **parseNoOperands(char *input) {
+    bool hasDelim = FALSE;
     char **line = malloc(1);
+    if (strstr(input, ",")) hasDelim = TRUE;
     lstrip(input);
     line[0] = strtok(input, "");
+    if (hasDelim == TRUE) {
+        line[1] = strtok(NULL, ",");
+    } else {
+        line[1] = strtok(NULL, " ");
+    }
+    line[2] = strtok(NULL, " ");
     return line;
 }
 
 int getOperandsCount(char *cmd, int *errors) {
     int numOfFuncs;
     int i;
+    char *cmdName = (char *) malloc(strlen(cmd));
+    stringCopy(cmdName, cmd);
+    cmdName = strtok(cmdName, " ");
     numOfFuncs = sizeof(functions) / sizeof(functions[0]);
+    swapLastCharIfNewLine(cmdName);
     for (i = 0; i < numOfFuncs; i++) {
-        if (strstr(cmd, functions[i].name)) {
+        if (strstr(cmdName, functions[i].name)) {
             return functions[i].operands;
         }
     }
     *errors += 1;
-    printf("--->Did not find command: %s\n", cmd);
+    printf("--->Error: CMD: [ %s ] not found.\n", cmdName);
     return -1;
+}
+
+bool assertNumOfOperands(char **parsedLine, int *errors, int numOfOperands) {
+    switch (numOfOperands) {
+        case 0:
+            if (parsedLine[1] != NULL || parsedLine[2] != NULL) {
+                *errors += 1;
+                return FALSE;
+            }
+            break;
+        case 1:
+            if (parsedLine[1] == NULL || parsedLine[2] != NULL) {
+                *errors += 1;
+                return FALSE;
+            }
+            break;
+        case 2:
+            if (parsedLine[1] == NULL || parsedLine[2] == NULL) {
+                *errors += 1;
+                return FALSE;
+            }
+            break;
+    }
+    return TRUE;
 }
 
 char **chooseParser(char *input, int *errors) {
@@ -68,6 +118,7 @@ char **chooseParser(char *input, int *errors) {
     char **parsedLine;
     int numOfOperands;
     line = strtok(input, "");
+    if (line == NULL) return NULL;
     lstrip(line);
     numOfOperands = getOperandsCount(line, errors);
     if (numOfOperands == -1) return NULL;
@@ -81,6 +132,17 @@ char **chooseParser(char *input, int *errors) {
         case 2:
             parsedLine = parseWith2Operands(input);
             break;
+    }
+    if (assertNumOfOperands(parsedLine, errors, numOfOperands) == FALSE) {
+        swapLastCharIfNewLine(parsedLine[0]);
+        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        return NULL;
+    }
+    if (strtok(NULL, " ") != NULL) {
+        swapLastCharIfNewLine(parsedLine[0]);
+        *errors += 1;
+        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        return NULL;
     }
     return parsedLine;
 }
@@ -98,10 +160,10 @@ void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, lon
         }
     }
     if (found == FALSE) {
-        printf("Error: CMD: [ %s ] not found\n", cmd);
+        printf("--->Error: CMD: [ %s ] not found\n", cmd);
         *errors += 1;
     }
-    setCode(mCode, IC, &functions[i], parsedLine, labelName);
+    setCode(mCode, IC, &functions[i], parsedLine, labelName, errors);
 }
 
 bool isInt(char *num) {
@@ -145,6 +207,9 @@ bool isLabel(char *operand) {
         operand[len - 1] = '\0';
         count = 1;
     }
+    if (isdigit(operand[0])) {
+        return FALSE;
+    }
     if (isValidLabelName(operand) == TRUE) {
         if ((isalpha(*operand) && *operand != '\0')) {
             len--;
@@ -161,7 +226,7 @@ bool isLabel(char *operand) {
     return TRUE;
 }
 
-sortType getSortType(char *operand) { /*TODO check why sporadic failures right hereeeeeeeee*/
+sortType getSortType(char *operand, int *errors) {
     if (strstr(operand, "\n") || strstr(operand, " ")) {
         operand[strlen(operand) - 1] = '\0';
     }
@@ -170,25 +235,31 @@ sortType getSortType(char *operand) { /*TODO check why sporadic failures right h
     /*immediate sort*/
     if (operand[0] == '#' && isInt(operand + 1)) return sort0;
     /*register sort*/
-    if (operand[0] == 'r' && ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
-                              (atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0'))) {
-        return sort3;
+    if (operand[0] == 'r') {
+        if ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
+            (atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0')) {
+            return sort3;
+        }
     }
     /*direct sort*/
     if (isLabel(operand) == TRUE) return sort1;
     /*index sort*/
     if ((strstr(operand, "[") && strstr(operand, "]"))) return sort2;
         /*did not find appropriate sort*/
-    else return unsorted;
+    else {
+        *errors += 1;
+        printf("--->Operand: %s, did not find matching sort type\n", operand);
+        return unsorted;
+    }
 }
 
 bool checkIfLabel(char *line) {
     char *tempLine = (char *) malloc(strlen(line) + 1);
     checkMalloc(tempLine);
     stringCopy(tempLine, line);
+    swapLastCharIfNewLine(tempLine);
     tempLine = strtok(tempLine, " ");
     if (tempLine[strlen(tempLine) - 1] == ':') {
-        /* check whether there is code after */
         return TRUE;
     }
     return FALSE;

@@ -10,6 +10,8 @@ char **parseNoOperands(char *input);
 
 int getOperandsCount(char *cmd, int *errors);
 
+bool assertNumOfOperands(char **parsedLine, int *errors, int numOfOperands);
+
 char **chooseParser(char *input, int *errors);
 
 void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName);
@@ -20,6 +22,6 @@ bool isValidLabelName(char *label);
 
 bool isLabel(char *operand);
 
-sortType getSortType(char *operand);
+sortType getSortType(char *operand, int *errors);
 
 #endif
