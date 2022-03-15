@@ -7,3 +7,5 @@ clr r1
 clr r2
 clr r3
 m2
+clr r3
+MAIN:
