@@ -32,17 +32,3 @@ jobs:
           echo building project
           make
           ./assembler ps ps2 ps3 ps4 ps5 ps6
-  send_mail:
-    steps:
-      - uses: dawidd6/action-send-mail@v3
-      - name: send_mail
-      - with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        subject: Github Actions job result
-        to: dome.dev0@gmail.com
-        from: C_Lab_Proj
-        secure: true
-        body: "Build job of ${{github.repository}} completed with status: ${{ job.status }}"
-        ignore_cert: true
-        priority: normal
