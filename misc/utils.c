@@ -40,7 +40,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     char *error = malloc(40 + strlen(fileName));
     char *filePath = malloc(17 + strlen(fileName));
     sprintf(error, "file: %s.as, returned error", fileName);
-    sprintf(filePath, "../%s.as", fileName);
+    sprintf(filePath, "%s.as", fileName);
     printf("Processing: %s\n", filePath);
     inp = fopen(filePath, "r");
     if (inp == NULL) {
