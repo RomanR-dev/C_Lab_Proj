@@ -150,9 +150,7 @@ char **chooseParser(char *input, int *errors) {
 void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
     int i;
-    if (cmd[strlen(cmd) - 1] == '\n') {
-        cmd[strlen(cmd) - 1] = '\0';
-    }
+    swapLastCharIfNewLine(cmd);
     for (i = 0; i < 17; i++) {
         if (strstr(parsedLine[0], functions[i].name) && strstr(functions[i].name, parsedLine[0])) {
             found = TRUE;

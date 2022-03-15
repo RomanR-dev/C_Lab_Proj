@@ -50,7 +50,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     } else {
         return inp;
     }
-   return inp;
+    return inp;
 }
 
 FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
@@ -495,19 +495,26 @@ int get16BitWordSection(unsigned int number) {
     return 16;
 }
 
-char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine) {
+char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine, char type) {
     int num1, num2, len, i;
+    if (number == 0 && type == 'c') {
+        for (i = 0; i < strlen(binNumber); i++) {
+            binNumber[i] = '0';
+        }
+        binNumber[i + 1] = '\0';
+        return binNumber;
+    }
     len = get16BitWordSection(number);
-    if (isAdditionalLine != TRUE) {
+    if (isAdditionalLine != TRUE && type == 'd') {
         num1 = getTheNumberIn4BitSection(number);
         if (num1 != -1) {
             num2 = getTimesToPower(number);
-            number = power(num1, num2);
+            number = power(num2, num1);
             if (num1 == 0 && num2 == 0) number = 1;
             if (num1 == 1 && num2 == 1) number = 2;
         }
 
-    } else if (isAdditionalLine == TRUE) {
+    } else if (isAdditionalLine == TRUE || type == 'D') {
         len = 16;
     }
     if (strlen(binNumber) == 4) len = 4;
@@ -546,6 +553,7 @@ void freeMachineCodes(machineCode *mCode, int IC) {
         mCode[counter].labelUsageDest = NULL;
         mCode[counter].labelUsageSource = NULL;
         mCode[counter].declaredLabel = NULL;
+        mCode[counter].isDataOrString = 0;
         if (mCode[counter].word.data != NULL) {
             mCode[counter].word.data->opcode = 0;
             mCode[counter].word.data->A = 0;

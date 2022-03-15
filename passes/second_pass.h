@@ -35,4 +35,4 @@ bool checkLabel(const char *label, symbol *tempNode, bool found, int *errors);
 void assertLabelsDeclaration(int *errors, machineCode *mCode, const long *IC, symbol *head);
 
 bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, const long *IC,
-                char *outPutFileName, int *dataCounter);
+                char *outPutFileName, const int *dataCounter);

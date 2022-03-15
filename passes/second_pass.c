@@ -18,7 +18,12 @@ void set19_16_bit_code(char *binNumber, machineCode *mCode, int i) {
 
 void set15_0_bit_data(char *binNumber, char *binNumber16, machineCode *mCode, int i,
                       long *A, long *B, long *C, long *D, long *E) {
-    binNumber16 = decToBin(binNumber16, mCode[i].word.data->opcode, mCode[i].additionalLine);
+    char type = 'd';
+    if (mCode[i].isDataOrString == TRUE){
+        type = 'D';
+    }
+    binNumber16 = decToBin(binNumber16, mCode[i].word.data->opcode,
+                           mCode[i].additionalLine, type);
     *A = convertBinToHex(binNumber, 4);
     resetArray(binNumber, 4);
     *B = assign4BitBinNumber(binNumber, binNumber16, 0, *B);
@@ -51,23 +56,23 @@ void setDataTo16BitWord(char *binNumber16, const char *binNumber, int start16, i
 
 void prepare15_to_0_bits(char *binNumber16, char *binNumber, machineCode *mCode, int i) {
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->funct, TRUE);
+    binNumber = decToBin(binNumber, mCode[i].word.code->funct, TRUE, 'c');
     setDataTo16BitWord(binNumber16, binNumber, 0, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->sourceReg, TRUE);
+    binNumber = decToBin(binNumber, mCode[i].word.code->sourceReg, TRUE, 'c');
     setDataTo16BitWord(binNumber16, binNumber, 4, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->sourceSort, TRUE);
+    binNumber = decToBin(binNumber, mCode[i].word.code->sourceSort, TRUE, 'c');
     setDataTo16BitWord(binNumber16, binNumber, 8, 2, 2);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->destReg, TRUE);
+    binNumber = decToBin(binNumber, mCode[i].word.code->destReg, TRUE, 'c');
     setDataTo16BitWord(binNumber16, binNumber, 10, 0, 4);
 
     resetArray(binNumber, 4);
-    binNumber = decToBin(binNumber, mCode[i].word.code->destSort, TRUE);
+    binNumber = decToBin(binNumber, mCode[i].word.code->destSort, TRUE, 'c');
     setDataTo16BitWord(binNumber16, binNumber, 14, 2, 2);
 
     resetArray(binNumber, 4);
@@ -244,7 +249,7 @@ void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
 bool checkLabel(const char *label, symbol *tempNode, bool found, int *errors) {
     if (label != NULL) {
         while (tempNode->isSet == TRUE) {
-            if (strstr(tempNode->name,label)) {
+            if (strstr(tempNode->name, label)) {
                 found = TRUE;
             }
             if (tempNode->hasNext == TRUE) {

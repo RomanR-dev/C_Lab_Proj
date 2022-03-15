@@ -44,7 +44,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
     /* macro finder  */
     if (strstr(line, "macro")) {
         char **tempLine = (char **) malloc(1);
-        char *macroName = (char *) malloc(74);
+        char *macroName = (char *) malloc(40);
         int counter = 0;
         checkMalloc(macroName);
         strtok(line, " ");
@@ -67,6 +67,7 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
             checkMalloc(tempLine[counter]);
             stringCopy(tempLine[counter], line);
             counter++;
+            swapLastCharIfNewLine(line);
             if (strstr(line, macroName)) {
                 *errors += 1;
                 printf("--->macro doesnt have a closure with 'endm' (found macro call) will not create am file and continue with process.\n");
