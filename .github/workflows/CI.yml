@@ -19,8 +19,10 @@ jobs:
       - name: build project - ubuntu-latest
         run: |
           echo building project
+          rm -f assembler
           make
           ./assembler ps ps2 ps3 ps4 ps5 ps6
+          echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
           
   build_and_test_18_04:
@@ -31,8 +33,10 @@ jobs:
       - name: build project - ubuntu-18.04
         run: |
           echo building project
+          rm -f assembler
           make
           ./assembler ps ps2 ps3 ps4 ps5 ps6
+          echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
 
   build_and_test_macos-latest:
@@ -43,6 +47,6 @@ jobs:
       - name: build project - macos-latest
         run: |
           echo building project
+          rm -f assembler
           make
           ./assembler ps ps2 ps3 ps4 ps5 ps6
-          cmp tester/ps.ob tester/main_tester
