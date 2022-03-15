@@ -26,6 +26,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
             tempLine = strtok(tempLine, ":");
             mCode[*DC].declaredLabel = (char *) malloc(strlen(tempLine) + 1);
             mCode[*DC].set = 'd';
+            mCode[*DC].isDataOrString = TRUE;
             checkMalloc(mCode[*DC].declaredLabel);
             stringCopy(mCode[*DC].declaredLabel, tempLine);
             stringCopy(tempLine, line);
@@ -42,6 +43,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
                 mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
                 checkMalloc(mCode[*DC].word.data);
                 mCode[*DC].word.data->opcode = tempLine[i];
+                mCode[*DC].isDataOrString = TRUE;
                 mCode[*DC].set = 'd';
                 setARE(*DC, mCode, 1, 0, 0);
                 i++;
@@ -85,6 +87,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
         }
         while (tempLine != NULL) {
             mCode[*DC].word.data = malloc(sizeof(*mCode[*DC].word.data));
+            mCode[*DC].isDataOrString = TRUE;
             mCode[*DC].set = 'd';
             currNum = strtol(tempLine, NULL, 10);
             mCode[*DC].word.data->opcode = currNum;
@@ -98,6 +101,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
             tempLine = strtok(NULL, "");
         }
     }
+    mCode[*DC - 1].isDataOrString = TRUE;
     mCode[*DC - 1].L = DCF;
     return DCF;
 }

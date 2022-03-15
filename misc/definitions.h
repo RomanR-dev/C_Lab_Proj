@@ -88,6 +88,7 @@ typedef struct machineCode {
     char *labelUsageDest;
     int L;
     bool additionalLine;
+    bool isDataOrString;
 } machineCode;
 
 #endif

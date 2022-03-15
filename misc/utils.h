@@ -63,7 +63,7 @@ char intToChar(unsigned int num);
 
 long convertBinToHex(char *binNumber, int bit);
 
-char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine);
+char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine, char type);
 
 long assign4BitBinNumber(char *binNumber, const char *binNumber16, int start, long letter);
 
