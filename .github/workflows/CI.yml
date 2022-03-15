@@ -21,7 +21,7 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
           echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
           
@@ -35,7 +35,7 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
           echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
 
@@ -49,4 +49,4 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
