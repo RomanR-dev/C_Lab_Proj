@@ -42,6 +42,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     sprintf(error, "file: %s.as, returned error", fileName);
     sprintf(filePath, "%s.as", fileName);
     printf("Processing: %s\n", filePath);
+
     inp = fopen(filePath, "r");
     if (inp == NULL) {
         perror(error);
@@ -49,6 +50,7 @@ FILE *openFile(char *fileName, FILE *inp) {
     } else {
         return inp;
     }
+   return inp;
 }
 
 FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
@@ -64,7 +66,7 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
 }
 
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
-    sprintf(outPutFileName, "../tester/%s.am", inputName);
+    sprintf(outPutFileName, "tester/%s.am", inputName);
     outP = fopen(outPutFileName, "w+");
     return outP;
 }
