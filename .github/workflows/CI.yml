@@ -11,7 +11,7 @@ on:
   schedule:
     - cron: '0 17 * * *'
 jobs:
-  build_and_test_20_Z04:
+  build_and_test_20_04:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +28,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: build project - ubuntu-18.04
+        run: |
+          echo building project
+          make
+          ./assembler ps ps2 ps3 ps4 ps5 ps6
+
+  build_and_test_macos-latest:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: build project - macos-latest
         run: |
           echo building project
           make
