@@ -13,11 +13,12 @@ void mainRunner(int argc, char **argv) {
     FILE *inp;
     checkMalloc(outPutFileName);
     checkMalloc(table);
-
+    printf("Received %d files, starting assembler process.\n\n", argc-1);
     while (inputFileCounter < argc) { /* iterate over files from argv .as */
+        errors = 0;
         memset(line, '0', 4);
         if ((inp = inputFileInit(argv, inp, &inputFileCounter)) == NULL) {
-            printf("file not found, skipping to next");
+            printError("file not found, skipping to next");
             continue;
         } else outP = outputFileInit(outP, outPutFileName, argv[inputFileCounter - 1]);
 
@@ -27,18 +28,22 @@ void mainRunner(int argc, char **argv) {
             preAssembler(line, &errors, inp, outP, table); /* macro handler */
         }
         free(table);
-        printf("===>>>>>> Pre assembler finished: %s, errors: %d\n", argv[inputFileCounter - 1], errors);
+        table = malloc(sizeof(macroTable));
+        printf("===>>>>>> Pre assembler finished: Errors: %d\n", errors);
         if (errors == 0) {
             fclose(inp);
             firstPass(line, outP, &errors, outPutFileName);
         } else {
             fclose(outP);
             fclose(inp);
-            printf("due to errors not continuing with flow on current file, continue with next file...");
+            remove(outPutFileName);
+            printError("due to errors not continuing with flow on current file, continue with next file...");
         }
-        printf("\n===>>>>>> Finished file: %s <<<<<<===\n", outPutFileName);
+        printf("===>>>>>> Finished file: %s <<<<<<===\n", outPutFileName);
         printf("======================================================================\n\n");
     }
+    free(table);
+    printf("Finished processing - %d file(s) that were received.\n", argc-1);
 }
 
 int main(int argc, char **argv) {

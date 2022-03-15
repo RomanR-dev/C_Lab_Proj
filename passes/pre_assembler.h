@@ -2,9 +2,6 @@
 #include "../misc/utils.h"
 #include "../misc/parsers.h"
 
-
-
-
 macroTable *addMacro(macroTable *table, char *name, char **cmd, int numOfCmds);
 
 bool macroWriter(char *line, macroTable *table, FILE *outP);

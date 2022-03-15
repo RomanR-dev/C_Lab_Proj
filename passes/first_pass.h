@@ -4,7 +4,7 @@
 #include "pre_assembler.h"
 
 
-int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, long *IC);
+int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, const long *IC, int *errors);
 
 bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
                            int *errors, machineCode *mCode, int *DCF, int *dataCounter);
