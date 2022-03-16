@@ -2,6 +2,12 @@
 #include "../misc/utils.h"
 #include "pre_assembler.h"
 
+/**
+ * set the left most 4 bits in the 20 bit word for data lines
+ * @param binNumber
+ * @param mCode
+ * @param i
+ */
 void set19_16_bit_data(char *binNumber, machineCode *mCode, int i) {
     binNumber[0] = '0';
     binNumber[1] = intToChar(mCode[i].word.data->A);
@@ -9,6 +15,12 @@ void set19_16_bit_data(char *binNumber, machineCode *mCode, int i) {
     binNumber[3] = intToChar(mCode[i].word.data->E);
 }
 
+/**
+ * set the left most 4 bits in the 20 bit word for code lines
+ * @param binNumber
+ * @param mCode
+ * @param i
+ */
 void set19_16_bit_code(char *binNumber, machineCode *mCode, int i) {
     binNumber[0] = '0';
     binNumber[1] = intToChar(mCode[i].word.code->A);
@@ -16,6 +28,18 @@ void set19_16_bit_code(char *binNumber, machineCode *mCode, int i) {
     binNumber[3] = intToChar(mCode[i].word.code->E);
 }
 
+/**
+ * set the rest if the 16 bit in the 20 bit word for data lines
+ * @param binNumber
+ * @param binNumber16
+ * @param mCode
+ * @param i
+ * @param A
+ * @param B
+ * @param C
+ * @param D
+ * @param E
+ */
 void set15_0_bit_data(char *binNumber, char *binNumber16, machineCode *mCode, int i,
                       long *A, long *B, long *C, long *D, long *E) {
     char type = 'd';
@@ -36,6 +60,15 @@ void set15_0_bit_data(char *binNumber, char *binNumber16, machineCode *mCode, in
     resetArray(binNumber, 4);
 }
 
+/**
+ * set the rest if the 16 bit in the 20 bit word for code lines
+ * @param binNumber16
+ * @param binNumber
+ * @param B
+ * @param C
+ * @param D
+ * @param E
+ */
 void set15_0_bit_code(char *binNumber16, char *binNumber, long *B, long *C, long *D, long *E) {
     *B = assign4BitBinNumber(binNumber, binNumber16, 0, *B);
     resetArray(binNumber, 4);
@@ -47,6 +80,14 @@ void set15_0_bit_code(char *binNumber16, char *binNumber, long *B, long *C, long
     resetArray(binNumber, 4);
 }
 
+/**
+ * set bits to the right most 16 bits in the 20 bit word
+ * @param binNumber16
+ * @param binNumber
+ * @param start16
+ * @param start4
+ * @param end
+ */
 void setDataTo16BitWord(char *binNumber16, const char *binNumber, int start16, int start4, int end) {
     int i = 0;
     for (; end > 0; end--, i++) {
@@ -54,6 +95,14 @@ void setDataTo16BitWord(char *binNumber16, const char *binNumber, int start16, i
     }
 }
 
+
+/**
+ * prepare each 4 bit part of the 16 bits for assignment
+ * @param binNumber16
+ * @param binNumber
+ * @param mCode
+ * @param i
+ */
 void prepare15_to_0_bits(char *binNumber16, char *binNumber, machineCode *mCode, int i) {
     resetArray(binNumber, 4);
     binNumber = decToBin(binNumber, mCode[i].word.code->funct, TRUE, 'c');
@@ -78,6 +127,13 @@ void prepare15_to_0_bits(char *binNumber16, char *binNumber, machineCode *mCode,
     resetArray(binNumber, 4);
 }
 
+/**
+ * process the collected information in both runs and create .ob file
+ * @param fileName
+ * @param mCode
+ * @param dataCounter
+ * @param IC
+ */
 void createObFile(char *fileName, machineCode *mCode, int dataCounter, int IC) {
     int i = 100;
     long A, B, C, D, E;
@@ -102,6 +158,11 @@ void createObFile(char *fileName, machineCode *mCode, int dataCounter, int IC) {
     fclose(file);
 }
 
+/**
+ * create  .ent file if .entry declarations were present in the .as file
+ * @param fileName
+ * @param head
+ */
 void createEntryFile(char *fileName, symbol *head) {
     bool createdFile = FALSE;
     FILE *file;
@@ -125,6 +186,11 @@ void createEntryFile(char *fileName, symbol *head) {
     }
 }
 
+/**
+ * create  .ext file if .extern declarations were present in the .as file
+ * @param fileName
+ * @param head
+ */
 void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
     FILE *file;
     bool createdFile = FALSE;
@@ -166,6 +232,13 @@ void createExternFile(char *fileName, symbol *head, machineCode *mCode) {
     }
 }
 
+/**
+ * generate file names for the output files
+ * @param orig
+ * @param ext
+ * @param ent
+ * @param ob
+ */
 void createOutPutFileNames(char *orig, char *ext, char *ent, char *ob) {
     int len;
     stringCopy(ext, orig);
@@ -185,6 +258,15 @@ void createOutPutFileNames(char *orig, char *ext, char *ent, char *ob) {
 
 }
 
+/**
+ * create the 3 output files based on 2 runs
+ * @param mCode
+ * @param head
+ * @param outPutFileName
+ * @param dataCounter
+ * @param IC
+ * @return
+ */
 bool createOutPutFiles(machineCode *mCode, symbol *head, char *outPutFileName, int dataCounter, int IC) {
     char *extFileName = (char *) malloc(strlen(outPutFileName) + 1);
     char *entFileName = (char *) malloc(strlen(outPutFileName) + 1);
@@ -196,6 +278,11 @@ bool createOutPutFiles(machineCode *mCode, symbol *head, char *outPutFileName, i
     return TRUE;
 }
 
+/**
+ * add entry flag to labels decalred with entry
+ * @param line
+ * @param head
+ */
 void entryStep(char *line, symbol *head) {
     char *tempLine = (char *) malloc(strlen(line) + 1);
     symbol *temp;
@@ -220,6 +307,13 @@ void entryStep(char *line, symbol *head) {
     }
 }
 
+/**
+ * fill and process the additional lines used per sort type
+ * @param tempNode
+ * @param mCode
+ * @param i
+ * @param labelUsage
+ */
 void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
     while (tempNode->isSet == TRUE) {
         if (labelUsage != NULL && strstr(labelUsage, tempNode->name)) {
@@ -246,6 +340,14 @@ void fillBlanks(symbol *tempNode, machineCode *mCode, int i, char *labelUsage) {
     }
 }
 
+/**
+ * check if label was declared if it was used or .extern
+ * @param label
+ * @param tempNode
+ * @param found
+ * @param errors
+ * @return
+ */
 bool checkLabel(const char *label, symbol *tempNode, bool found, int *errors) {
     if (label != NULL) {
         while (tempNode->isSet == TRUE) {
@@ -268,6 +370,13 @@ bool checkLabel(const char *label, symbol *tempNode, bool found, int *errors) {
     return FALSE;
 }
 
+/**
+ * iterate over the information gathered and check if all labels are properly decalred
+ * @param errors
+ * @param mCode
+ * @param IC
+ * @param head
+ */
 void assertLabelsDeclaration(int *errors, machineCode *mCode, const long *IC, symbol *head) {
     int i = 0;
     int err;
@@ -290,6 +399,18 @@ void assertLabelsDeclaration(int *errors, machineCode *mCode, const long *IC, sy
     }
 }
 
+/**
+ * second pass over .am file - finalize generation of symbols table and machine code snapshot - create output files
+ * @param line
+ * @param inp
+ * @param errors
+ * @param head
+ * @param mCode
+ * @param IC
+ * @param outPutFileName
+ * @param dataCounter
+ * @return
+ */
 bool secondPass(char *line, FILE *inp, int *errors, symbol *head, machineCode *mCode, const long *IC,
                 char *outPutFileName, const int *dataCounter) {
     int i = 0;

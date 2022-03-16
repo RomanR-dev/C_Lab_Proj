@@ -2,6 +2,10 @@
 #include "parsers.h"
 
 /* utils */
+/**
+ * swap last char /n for /0
+ * @param string
+ */
 void swapLastCharIfNewLine(char *string) {
     int len;
     len = strlen(string);
@@ -15,6 +19,10 @@ void swapLastCharIfNewLine(char *string) {
     }
 }
 
+/**
+ * strip leading whitespaces
+ * @param l
+ */
 void lstrip(char *l) {
     int i = 0;
     int j = 0;
@@ -27,6 +35,11 @@ void lstrip(char *l) {
     l[j] = '\0';
 }
 
+/**
+ * copy string from src to dest
+ * @param dest
+ * @param src
+ */
 void stringCopy(char *dest, char *src) {
     int len = strlen(src);
     int i = 0;
@@ -36,6 +49,12 @@ void stringCopy(char *dest, char *src) {
     dest[i] = '\0';
 }
 
+/**
+ * open input file
+ * @param fileName
+ * @param inp
+ * @return
+ */
 FILE *openFile(char *fileName, FILE *inp) {
     char *error = malloc(40 + strlen(fileName));
     char *filePath = malloc(17 + strlen(fileName));
@@ -53,6 +72,13 @@ FILE *openFile(char *fileName, FILE *inp) {
     return inp;
 }
 
+/**
+ * proces input file and inc file counter
+ * @param argv
+ * @param inp
+ * @param inputFileCounter
+ * @return
+ */
 FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
     /* file check and open if exists */
     inp = openFile(argv[*inputFileCounter], inp);
@@ -65,12 +91,29 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
     return inp;
 }
 
+/**
+ * create output file .am
+ * @param outP
+ * @param outPutFileName
+ * @param inputName
+ * @return
+ */
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
     sprintf(outPutFileName, "tester/%s.am", inputName);
     outP = fopen(outPutFileName, "w+");
     return outP;
 }
 
+/**
+ * set node in the linked list (symbols table)
+ * @param node
+ * @param name
+ * @param IC
+ * @param baseAddr
+ * @param offset
+ * @param attribs
+ * @return
+ */
 symbol *setNode(symbol *node, char *name, int IC, int baseAddr, int offset, attribute attribs) {
 
     node->name = (char *) malloc(strlen(name)); /* TODO: add the name */
@@ -96,6 +139,11 @@ symbol *setNode(symbol *node, char *name, int IC, int baseAddr, int offset, attr
     return node;
 }
 
+/**
+ * copy node from 1 to another 2 (deep copy)
+ * @param current
+ * @param new
+ */
 void copyNode(symbol *current, symbol *new) {
     current->name = (char *) malloc(strlen(new->name) + 1);
     stringCopy(current->name, new->name);
@@ -111,6 +159,12 @@ void copyNode(symbol *current, symbol *new) {
     current->hasNext = new->hasNext;
 }
 
+/**
+ * add node to linked list
+ * @param head
+ * @param node
+ * @return
+ */
 symbol *addNodeToList(symbol *head, symbol *node) {
     while (head->hasNext != FALSE) {
         head = head->next;
@@ -121,6 +175,11 @@ symbol *addNodeToList(symbol *head, symbol *node) {
     return head;
 }
 
+/**
+ * check if malloc was successful
+ * @param ptr
+ * @return
+ */
 bool checkMalloc(void *ptr) {
     if (ptr == NULL) {
         printf("--->malloc failed\n");
@@ -129,6 +188,11 @@ bool checkMalloc(void *ptr) {
     return TRUE;
 }
 
+/**
+ * find offset for symbols table
+ * @param IC
+ * @return
+ */
 int findOffset(int IC) {
     IC--;
     while ((IC % 16) != 0) {
@@ -137,6 +201,11 @@ int findOffset(int IC) {
     return IC;
 }
 
+/**
+ * check if derective is entry or extern
+ * @param line
+ * @return
+ */
 int checkIfEntryOrExtern(char *line) {
     char *attrib = (char *) malloc(strlen(line) + 1);
     stringCopy(attrib, line);
@@ -149,6 +218,11 @@ int checkIfEntryOrExtern(char *line) {
     return -1;
 }
 
+/**
+ * check if attribute
+ * @param attrib
+ * @return
+ */
 int checkIfAttrib(char *attrib) {
     if (strstr(".entry", attrib) || strstr(".extern", attrib)) {
         return 1;
@@ -158,6 +232,11 @@ int checkIfAttrib(char *attrib) {
     return 0;
 }
 
+/**
+ * check if received a directive command
+ * @param line
+ * @return
+ */
 bool checkIfDirective(char *line) {
     int res;
     char *tempLine = (char *) malloc(strlen(line) + 1);
@@ -180,6 +259,11 @@ bool checkIfDirective(char *line) {
     return FALSE;
 }
 
+/**
+ * set attributes in the node
+ * @param attribs
+ * @param line
+ */
 void setAttrib(attribute *attribs, char *line) {
     if (checkIfEntryOrExtern(line) == 1) {
         attribs->data = FALSE;
@@ -204,6 +288,16 @@ void setAttrib(attribute *attribs, char *line) {
     }
 }
 
+/**
+ * add new symbol to the symbols table
+ * @param name
+ * @param attribs
+ * @param tempNode
+ * @param head
+ * @param currNode
+ * @param IC
+ * @param line
+ */
 void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, symbol *currNode, long IC, char *line) {
     int offSet = 0;
     if (IC != 0) offSet = findOffset(IC);
@@ -220,6 +314,13 @@ void addSymbol(char *name, attribute *attribs, symbol *tempNode, symbol *head, s
     /* *IC += *IC - offSet;*/
 }
 
+/**
+ * get next line
+ * @param line
+ * @param inp
+ * @param errors
+ * @return next line char array
+ */
 char *iterator(char *line, FILE *inp, const int *errors) {
     while ((fgets(line, MAX_LENGTH, inp)) != NULL) { /* read from .as file and save macro data to .am file */
         if (strlen(line) > MAX_LENGTH) {
@@ -235,16 +336,36 @@ char *iterator(char *line, FILE *inp, const int *errors) {
     return "NULL";
 }
 
+/**
+ * print error wrapper
+ * @param error
+ */
 void printError(char *error) {
     printf("\n--->%s\n", error);
 }
 
+/**
+ * set A, R, E bits
+ * @param IC
+ * @param mCode
+ * @param A
+ * @param R
+ * @param E
+ */
 void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsigned char E) {
     mCode[IC].word.data->A = A;
     mCode[IC].word.data->R = R;
     mCode[IC].word.data->E = E;
 }
 
+/**
+ * add additional lines based on source and dest sort
+ * @param mCode
+ * @param IC
+ * @param sort
+ * @param L
+ * @param operand
+ */
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand) {
     long num;
     if (sort == sort0) {
@@ -276,6 +397,12 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
     }
 }
 
+/**
+ * extract register number
+ * @param reg
+ * @param sort
+ * @return
+ */
 int regNumber(char *reg, sortType sort) {
     if (sort == sort2) {
         strtok(reg, "[");
@@ -286,6 +413,16 @@ int regNumber(char *reg, sortType sort) {
     return atoi(reg);
 }
 
+/**
+ * set operand label if one of the operands is a label
+ * @param destSort
+ * @param sourceSort
+ * @param labelName
+ * @param mCode
+ * @param parsedLine
+ * @param IC
+ * @param operands
+ */
 void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelName,
                      machineCode *mCode, char **parsedLine, const long *IC, int operands) {
     if (destSort == sort1 && (labelName == NULL || mCode[*IC - 1].declaredLabel != NULL)) {
@@ -312,6 +449,15 @@ void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelNa
     }
 }
 
+/**
+ * set code line in machine code mem snapshot
+ * @param mCode
+ * @param IC
+ * @param f
+ * @param parsedLine
+ * @param labelName
+ * @param errors
+ */
 void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *labelName, int *errors) {
     int L = 0;
     sortType sourceSort = unsorted;
@@ -389,6 +535,11 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
     mCode[*IC - 1].L = L;
 }
 
+/**
+ * receive a line a check for errors
+ * @param errors
+ * @param currLine
+ */
 void errorHandler(int *errors, char *currLine) {
     char *lineForErrorHandling;
     lineForErrorHandling = (char *) malloc(strlen(currLine) + 1);
@@ -396,6 +547,12 @@ void errorHandler(int *errors, char *currLine) {
     stringCopy(lineForErrorHandling, currLine);
 }
 
+/**
+ * power math func
+ * @param num
+ * @param times
+ * @return
+ */
 long power(int num, int times) {
     if (times > 1) {
         return num * power(num, times - 1);
@@ -403,6 +560,12 @@ long power(int num, int times) {
     return num;
 }
 
+/**
+ * convert binary 4 bit num to hex
+ * @param binNumber
+ * @param bit
+ * @return
+ */
 long convertBinToHex4Bit(const char *binNumber, int bit) {
     long dec = 0;
     int i;
@@ -418,6 +581,12 @@ long convertBinToHex4Bit(const char *binNumber, int bit) {
     return dec;
 }
 
+/**
+ * convert binary 16 bit to hex
+ * @param binNumber
+ * @param bit
+ * @return
+ */
 long convertBinToHex16Bit(const char *binNumber, int bit) {
     long dec = 0;
     int i;
@@ -433,10 +602,21 @@ long convertBinToHex16Bit(const char *binNumber, int bit) {
     return dec;
 }
 
+/**
+ * convert integer type to char
+ * @param num
+ * @return
+ */
 char intToChar(unsigned int num) {
     return (char) (num + '0');
 }
 
+/**
+ * convert bin to hex
+ * @param binNumber
+ * @param bit
+ * @return
+ */
 long convertBinToHex(char *binNumber, int bit) {
     if (bit == 4) {
         return convertBinToHex4Bit(binNumber, 4);
@@ -447,6 +627,11 @@ long convertBinToHex(char *binNumber, int bit) {
     return -1;
 }
 
+/**
+ * get how many times to multiply the number by itself for conversion
+ * @param number
+ * @return
+ */
 int getTimesToPower(int number) {
     if (number == 0 || number == 4 || number == 8 || number == 12) {
         return 0;
@@ -463,6 +648,11 @@ int getTimesToPower(int number) {
     return 0;
 }
 
+/**
+ * get which number corresponds in 4 bit binary
+ * @param number
+ * @return
+ */
 int getTheNumberIn4BitSection(unsigned int number) {
     if (number == 0 || number == 4 || number == 8 || number == 12) {
         return 0;
@@ -479,6 +669,11 @@ int getTheNumberIn4BitSection(unsigned int number) {
     return -1;
 }
 
+/**
+ * get which number corresponds in 16 bit binary
+ * @param number
+ * @return
+ */
 int get16BitWordSection(unsigned int number) {
     if (number == 0 || number == 1 || number == 2 || number == 3) {
         return 16;
@@ -495,6 +690,14 @@ int get16BitWordSection(unsigned int number) {
     return 16;
 }
 
+/**
+ * convert decimal to 16 or 4 bit binary char array
+ * @param binNumber
+ * @param number
+ * @param isAdditionalLine
+ * @param type
+ * @return
+ */
 char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine, char type) {
     int num1, num2, len, i;
     if (number == 0 && type == 'c') {
@@ -525,6 +728,14 @@ char *decToBin(char *binNumber, unsigned int number, bool isAdditionalLine, char
     return binNumber;
 }
 
+/**
+ * assign the bin number to corresponding location in 16 bit divided to 4 4's
+ * @param binNumber
+ * @param binNumber16
+ * @param start
+ * @param letter
+ * @return
+ */
 long assign4BitBinNumber(char *binNumber, const char *binNumber16, int start, long letter) {
     int i = 0;
     for (; i < 4; i++, start++) {
@@ -534,16 +745,31 @@ long assign4BitBinNumber(char *binNumber, const char *binNumber16, int start, lo
     return letter;
 }
 
+/**
+ * reset received array
+ * @param array
+ * @param size
+ */
 void resetArray(char *array, int size) {
     memset(array, '0', size);
     array[size] = '\0';
 }
 
+/**
+ * reset array used for 4 and 16 bit repr
+ * @param binNumber
+ * @param binNumber16
+ */
 void resetArrays(char *binNumber, char *binNumber16) {
     resetArray(binNumber, 4);
     resetArray(binNumber16, 16);
 }
 
+/**
+ * free mallocs in machine codes memory snapshot array
+ * @param mCode
+ * @param IC
+ */
 void freeMachineCodes(machineCode *mCode, int IC) {
     int counter = 0;
     for (; counter < IC; counter++) {
@@ -573,6 +799,12 @@ void freeMachineCodes(machineCode *mCode, int IC) {
     }
 }
 
+/**
+ * free mallocs from 2 passes
+ * @param mCode
+ * @param head
+ * @param IC
+ */
 void freeMallocsFromPasses(machineCode *mCode, symbol *head, int IC) {
     freeMachineCodes(mCode, IC);
     free(head);

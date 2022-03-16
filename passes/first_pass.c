@@ -4,6 +4,16 @@
 #include "pre_assembler.h"
 #include "second_pass.h"
 
+/**
+ * add .data or .string information to memory snapshot
+ * @param line
+ * @param mCode
+ * @param DC
+ * @param withLabel
+ * @param IC
+ * @param errors
+ * @return DCF value
+ */
 int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, const long *IC, int *errors) {
     int DCF = 0;
     /* get the string from between quotes, insert with for over len */
@@ -106,6 +116,11 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
     return DCF;
 }
 
+/**
+ * check if label properly decalred
+ * @param line
+ * @return TRUE/FALSE
+ */
 bool assertLabelProperDeclaration(char *line) {
     char *tempLine = (char *) malloc(strlen(line) + 1);
     checkMalloc(tempLine);
@@ -116,6 +131,18 @@ bool assertLabelProperDeclaration(char *line) {
     return TRUE;
 }
 
+/**
+ * add information for line with declared label + .data / .string
+ * @param line
+ * @param head
+ * @param IC
+ * @param DC
+ * @param errors
+ * @param mCode
+ * @param DCF
+ * @param dataCounter
+ * @return
+ */
 bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
                            int *errors, machineCode *mCode, int *DCF, int *dataCounter) {
     bool isLabel;
@@ -159,6 +186,13 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
     return FALSE;
 }
 
+/**
+ * process .extern line
+ * @param line
+ * @param head
+ * @param errors
+ * @param IC
+ */
 void externStep(char *line, symbol *head, int *errors, long IC) {
     size_t len;
     char *name = (char *) malloc(strlen(line) + 1);
@@ -179,6 +213,12 @@ void externStep(char *line, symbol *head, int *errors, long IC) {
     addSymbol(name, attribs, tempNode, head, currNode, IC, line);
 }
 
+/**
+ * align data location in memory snapshot using IC and DC values
+ * @param ICF
+ * @param head
+ * @param mCode
+ */
 void alignTables(int ICF, symbol *head, machineCode *mCode) {
     symbol *tempNode = head;
     int i = 0;
@@ -210,6 +250,14 @@ void alignTables(int ICF, symbol *head, machineCode *mCode) {
     }
 }
 
+/**
+ * go over the .am generated file and process the information into symbols table and machine code memory snapshot
+ * @param line
+ * @param inp
+ * @param errors
+ * @param outPutFileName
+ * @return TRUE/FALSE
+ */
 bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
     long IC = 100;
     long DC = 0;
