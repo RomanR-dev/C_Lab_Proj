@@ -1,6 +1,5 @@
 #include "definitions.h"
 #include "utils.h"
-#include "utils.h"
 
 /**
  * functions array with each func declaration
@@ -107,7 +106,7 @@ int getOperandsCount(char *cmd, int *errors) {
         }
     }
     *errors += 1;
-    printf("--->Error: CMD: [ %s ] not found.\n", cmdName);
+    printf("%d --->Error: CMD: [ %s ] not found.\n", lineNum, cmdName);
     return -1;
 }
 
@@ -170,13 +169,13 @@ char **chooseParser(char *input, int *errors) {
     }
     if (assertNumOfOperands(parsedLine, errors, numOfOperands) == FALSE) {
         swapLastCharIfNewLine(parsedLine[0]);
-        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        printf("%d --->Wrong number of operands for command: %s\n", lineNum, parsedLine[0]);
         return NULL;
     }
     if (strtok(NULL, " ") != NULL) {
         swapLastCharIfNewLine(parsedLine[0]);
         *errors += 1;
-        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        printf("%d --->Wrong number of operands for command: %s\n", lineNum, parsedLine[0]);
         return NULL;
     }
     return parsedLine;
@@ -202,7 +201,7 @@ void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, lon
         }
     }
     if (found == FALSE) {
-        printf("--->Error: CMD: [ %s ] not found\n", cmd);
+        printf("%d --->Error: CMD: [ %s ] not found\n", lineNum, cmd);
         *errors += 1;
     }
     setCode(mCode, IC, &functions[i], parsedLine, labelName, errors);
@@ -302,6 +301,10 @@ sortType getSortType(char *operand, int *errors) {
         if ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
             (atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0')) {
             return sort3;
+        } else {
+            *errors += 1;
+            printf("%d --->reg: %s, wrong number\n", lineNum, operand);
+            return unsorted;
         }
     }
     /*direct sort*/
@@ -311,7 +314,7 @@ sortType getSortType(char *operand, int *errors) {
         /*did not find appropriate sort*/
     else {
         *errors += 1;
-        printf("--->Operand: %s, did not find matching sort type\n", operand);
+        printf("%d --->Operand: %s, did not find matching sort type\n", lineNum, operand);
         return unsorted;
     }
 }

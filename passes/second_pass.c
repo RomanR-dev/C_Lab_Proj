@@ -388,7 +388,7 @@ void assertLabelsDeclaration(int *errors, machineCode *mCode, const long *IC, sy
         found = checkLabel(mCode[i].labelUsageSource, tempNode, found, errors);
         if (*errors > err) {
             err = *errors;
-            printf("--->Usage of undeclared label found: %s, error\n", mCode[i].labelUsageSource);
+            printf("--->Usage of undeclared label found: %s, error\n" , mCode[i].labelUsageSource);
         }
         tempNode = head;
         found = checkLabel(mCode[i].labelUsageDest, tempNode, found, errors);

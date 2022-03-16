@@ -44,7 +44,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
         strtok(tempLine, "”");
         tempLine = strtok(NULL, "");
         if (tempLine == NULL) {
-            printf("--->No characters after .string declaration\n");
+            printf("%d --->No characters after .string declaration or string undeclared properly\n", lineNum-1);
             *errors += 1;
             return 0;
         }
@@ -85,7 +85,7 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
             tempLine = strtok(tempLine, ".data");
         }
         if (tempLine == NULL) {
-            printf("--->No data after .data declaration\n");
+            printf("%d --->No data after .data declaration\n", lineNum);
             *errors += 1;
             return 0;
         }
@@ -163,7 +163,7 @@ bool labelAndDirectiveStep(char *line, symbol *head, long *IC, long *DC,
         if (assertLabelProperDeclaration(line) == FALSE) {
             *errors += 1;
             swapLastCharIfNewLine(line);
-            printf("--->Undefined label: %s\n", line);
+            printf("%d --->Undefined label: %s\n", lineNum, line);
             return FALSE;
         }
     }
@@ -280,16 +280,19 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         if (is == TRUE) {
             stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
+            lineNum++;
             continue;
         }
         if (checkIfEntryOrExtern(line) == 2) { /*extern*/
             externStep(line, head, errors, zero);
             stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
+            lineNum++;
             continue;
         } else if (checkIfEntryOrExtern(line) == 1) {
             stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
+            lineNum++;
             continue;
         } /*entry - doing nothing first pass*/
 
@@ -305,6 +308,7 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         if (parsedLine == NULL) {
             stringCopy(line, iterator(line, inp, errors));
             errorHandler(errors, line);
+            lineNum++;
             continue;
         }
         parseCmd(parsedLine, errors, tempLine, mCode, &IC, labelName);
@@ -314,6 +318,7 @@ bool firstPass(char *line, FILE *inp, int *errors, char *outPutFileName) {
         }
         stringCopy(line, iterator(line, inp, errors));
         errorHandler(errors, line);
+        lineNum++;
     }
 
     printf("===>>>>>> First pass finished: Errors: %d\n", *errors);

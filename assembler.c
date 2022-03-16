@@ -3,6 +3,11 @@
 #include "passes/pre_assembler.h"
 #include "passes/first_pass.h"
 
+/**
+ * main wrapper function that parses the user inputs and executes the runs
+ * @param argc
+ * @param argv
+ */
 void mainRunner(int argc, char **argv) {
     int errors = 0;
     int inputFileCounter = 1;
@@ -16,6 +21,7 @@ void mainRunner(int argc, char **argv) {
     printf("Received %d files, starting assembler process.\n\n", argc-1);
     while (inputFileCounter < argc) { /* iterate over files from argv .as */
         errors = 0;
+        lineNum = 1;
         memset(line, '0', 4);
         if ((inp = inputFileInit(argv, inp, &inputFileCounter)) == NULL) {
             printError("file not found, skipping to next");
@@ -32,6 +38,7 @@ void mainRunner(int argc, char **argv) {
         printf("===>>>>>> Pre assembler finished: Errors: %d\n", errors);
         if (errors == 0) {
             fclose(inp);
+            lineNum = 1;
             firstPass(line, outP, &errors, outPutFileName);
         } else {
             fclose(outP);
