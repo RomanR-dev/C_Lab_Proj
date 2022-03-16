@@ -1,7 +1,14 @@
 #include "../misc/definitions.h"
 #include "../misc/utils.h"
-#include "../misc/parsers.h"
 
+/**
+ * add macro to the macro's table during pre-assembler
+ * @param table
+ * @param name
+ * @param cmd
+ * @param numOfCmds
+ * @return
+ */
 macroTable *addMacro(macroTable *table, char *name, char **cmd, int numOfCmds) {
     int i = 0;
     int j = 0;
@@ -22,6 +29,13 @@ macroTable *addMacro(macroTable *table, char *name, char **cmd, int numOfCmds) {
     return table;
 }
 
+/**
+ * write macro to .am file
+ * @param line
+ * @param table
+ * @param outP
+ * @return
+ */
 bool macroWriter(char *line, macroTable *table, FILE *outP) {
     int macroCounter = 0;
     int i = 0;
@@ -38,6 +52,14 @@ bool macroWriter(char *line, macroTable *table, FILE *outP) {
     return FALSE;
 }
 
+/**
+ * process the initial .as file as is, and unpacks any defined and used macros
+ * @param line
+ * @param errors
+ * @param inp
+ * @param outP
+ * @param table
+ */
 void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *table) {
     bool endm = FALSE;
     bool writeResult = FALSE;
@@ -51,10 +73,11 @@ void preAssembler(char *line, int *errors, FILE *inp, FILE *outP, macroTable *ta
         stringCopy(macroName, strtok(NULL, ":"));
         if (macroName[strlen(macroName) - 1] == '\n') macroName[strlen(macroName) - 1] = '\0';
         while ((fgets(line, 80, inp)) != NULL) { /* read from .as file and save macro data */
+            lineNum++;
             if (*line == '\n') continue;
             if (strlen(line) > 80) {
                 errors += 1;
-                printf("--->line to long\n");
+                printf("%d --->line to long\n", lineNum);
                 continue;
             }
             if (strstr(line, "endm")) {

@@ -9,6 +9,9 @@
 #define MAX_LENGTH 80
 #define MAX_COMMANDS 8192
 
+/**
+ * declare boolean type TRUE = 1 FALSE = 0 using enum
+ */
 typedef int bool;
 
 enum {
@@ -16,6 +19,9 @@ enum {
     TRUE
 };
 
+/**
+ * attributes struct
+ */
 typedef struct {
     bool code;
     bool data;
@@ -23,6 +29,9 @@ typedef struct {
     bool entry;
 } attribute;
 
+/**
+ * symbol repr struct
+ */
 typedef struct symbol {
     char *name;
     int value;
@@ -35,6 +44,9 @@ typedef struct symbol {
     struct symbol *next;
 } symbol;
 
+/**
+ * 4 sort types
+ */
 typedef enum {
     /*binary*/
     sort0 = 0,  /*00 extra 1 word*/
@@ -44,7 +56,9 @@ typedef enum {
     unsorted = 4
 } sortType;
 
-
+/**
+ * func repr struct
+ */
 typedef struct {
     char *name;
     int opcode;
@@ -52,6 +66,9 @@ typedef struct {
     int operands;
 }func;
 
+/**
+ * macros table repr struct
+ */
 typedef struct {
     int set;
     char *name;
@@ -59,6 +76,9 @@ typedef struct {
     int numOfCmnds;
 } macroTable;
 
+/**
+ * data word repr struct
+ */
 typedef struct word1 {
     unsigned int destSort: 2;
     unsigned int destReg: 4;
@@ -70,6 +90,9 @@ typedef struct word1 {
     unsigned int E: 1;
 } word1;
 
+/**
+ * code word repr struct
+ */
 typedef struct word2 {
     unsigned int opcode: 16;
     unsigned int A: 1;
@@ -77,6 +100,9 @@ typedef struct word2 {
     unsigned int E: 1;
 } word2;
 
+/**
+ * memory snapshot repr struct
+ */
 typedef struct machineCode {
     union word {
         word1 *code;

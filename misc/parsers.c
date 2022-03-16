@@ -1,9 +1,9 @@
 #include "definitions.h"
 #include "utils.h"
-#include "definitions.c"
-#include "utils.h"
 
-
+/**
+ * functions array with each func declaration
+ */
 func functions[] = {
         {"mov",  0,  0,  2},
         {"cmp",  1,  0,  2},
@@ -26,6 +26,11 @@ func functions[] = {
 };
 
 /* parser funcs for asm code */
+/**
+ * parse func with 2 operands
+ * @param input
+ * @return
+ */
 char **parseWith2Operands(char *input) {
     bool hasDelim = FALSE;
     char **line = malloc(1);
@@ -41,6 +46,11 @@ char **parseWith2Operands(char *input) {
     return line;
 }
 
+/**
+ * parse func with 1 operand
+ * @param input
+ * @return
+ */
 char **parseWith1Operand(char *input) {
     bool hasDelim = FALSE;
     char **line = malloc(1);
@@ -56,6 +66,11 @@ char **parseWith1Operand(char *input) {
     return line;
 }
 
+/**
+ * parse func with 0 operands
+ * @param input
+ * @return
+ */
 char **parseNoOperands(char *input) {
     bool hasDelim = FALSE;
     char **line = malloc(1);
@@ -71,6 +86,12 @@ char **parseNoOperands(char *input) {
     return line;
 }
 
+/**
+ * get num of parsed func operands
+ * @param cmd
+ * @param errors
+ * @return
+ */
 int getOperandsCount(char *cmd, int *errors) {
     int numOfFuncs;
     int i;
@@ -85,10 +106,17 @@ int getOperandsCount(char *cmd, int *errors) {
         }
     }
     *errors += 1;
-    printf("--->Error: CMD: [ %s ] not found.\n", cmdName);
+    printf("%d --->Error: CMD: [ %s ] not found.\n", lineNum, cmdName);
     return -1;
 }
 
+/**
+ * check if proper num of operands
+ * @param parsedLine
+ * @param errors
+ * @param numOfOperands
+ * @return
+ */
 bool assertNumOfOperands(char **parsedLine, int *errors, int numOfOperands) {
     switch (numOfOperands) {
         case 0:
@@ -113,6 +141,12 @@ bool assertNumOfOperands(char **parsedLine, int *errors, int numOfOperands) {
     return TRUE;
 }
 
+/**
+ * choose parser bases on operands count
+ * @param input
+ * @param errors
+ * @return
+ */
 char **chooseParser(char *input, int *errors) {
     char *line;
     char **parsedLine;
@@ -135,18 +169,27 @@ char **chooseParser(char *input, int *errors) {
     }
     if (assertNumOfOperands(parsedLine, errors, numOfOperands) == FALSE) {
         swapLastCharIfNewLine(parsedLine[0]);
-        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        printf("%d --->Wrong number of operands for command: %s\n", lineNum, parsedLine[0]);
         return NULL;
     }
     if (strtok(NULL, " ") != NULL) {
         swapLastCharIfNewLine(parsedLine[0]);
         *errors += 1;
-        printf("--->Wrong number of operands for command: %s\n", parsedLine[0]);
+        printf("%d --->Wrong number of operands for command: %s\n", lineNum, parsedLine[0]);
         return NULL;
     }
     return parsedLine;
 }
 
+/**
+ * parse received command line
+ * @param parsedLine
+ * @param errors
+ * @param cmd
+ * @param mCode
+ * @param IC
+ * @param labelName
+ */
 void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, long *IC, char *labelName) {
     bool found = FALSE;
     int i;
@@ -158,12 +201,17 @@ void parseCmd(char **parsedLine, int *errors, char *cmd, machineCode *mCode, lon
         }
     }
     if (found == FALSE) {
-        printf("--->Error: CMD: [ %s ] not found\n", cmd);
+        printf("%d --->Error: CMD: [ %s ] not found\n", lineNum, cmd);
         *errors += 1;
     }
     setCode(mCode, IC, &functions[i], parsedLine, labelName, errors);
 }
 
+/**
+ * check if integer
+ * @param num
+ * @return
+ */
 bool isInt(char *num) {
     int i = 0;
     if (num[0] == '-' || num[0] == '+') num++;
@@ -178,6 +226,11 @@ bool isInt(char *num) {
     return i > 0;
 }
 
+/**
+ * check if proper label name
+ * @param label
+ * @return
+ */
 bool isValidLabelName(char *label) {
     int i = 0;
     char *regName = (char *) malloc(4);
@@ -197,6 +250,11 @@ bool isValidLabelName(char *label) {
     return TRUE;
 }
 
+/**
+ * check if label
+ * @param operand
+ * @return
+ */
 bool isLabel(char *operand) {
     int len;
     int count = 0;
@@ -224,6 +282,12 @@ bool isLabel(char *operand) {
     return TRUE;
 }
 
+/**
+ * get sort type for dest and source
+ * @param operand
+ * @param errors
+ * @return
+ */
 sortType getSortType(char *operand, int *errors) {
     if (strstr(operand, "\n") || strstr(operand, " ")) {
         operand[strlen(operand) - 1] = '\0';
@@ -237,6 +301,10 @@ sortType getSortType(char *operand, int *errors) {
         if ((atoi(&operand[1]) >= 0 && atoi(&operand[1]) <= 9 && operand[2] == '\0') ||
             (atoi(&operand[1]) >= 10 && atoi(&operand[1]) <= 15 && operand[3] == '\0')) {
             return sort3;
+        } else {
+            *errors += 1;
+            printf("%d --->reg: %s, wrong number\n", lineNum, operand);
+            return unsorted;
         }
     }
     /*direct sort*/
@@ -246,11 +314,16 @@ sortType getSortType(char *operand, int *errors) {
         /*did not find appropriate sort*/
     else {
         *errors += 1;
-        printf("--->Operand: %s, did not find matching sort type\n", operand);
+        printf("%d --->Operand: %s, did not find matching sort type\n", lineNum, operand);
         return unsorted;
     }
 }
 
+/**
+ * check if label
+ * @param line
+ * @return
+ */
 bool checkIfLabel(char *line) {
     char *tempLine = (char *) malloc(strlen(line) + 1);
     checkMalloc(tempLine);

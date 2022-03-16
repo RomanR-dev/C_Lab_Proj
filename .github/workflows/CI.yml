@@ -21,9 +21,13 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
           echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
+      - uses: actions/upload-artifact@v3
+        with:
+          name: assembler
+          path: assembler
           
   build_and_test_18_04:
     runs-on: ubuntu-18.04
@@ -35,7 +39,7 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
           echo compare tester/ps.ob tester/main_tester
           cmp tester/ps.ob tester/main_tester
 
@@ -49,4 +53,4 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6
+          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7

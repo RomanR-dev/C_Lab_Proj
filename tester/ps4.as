@@ -6,4 +6,3 @@ ABC DCA
 mov #1, R23
 clr 1
 clr REG
-.string "aaaaaa
