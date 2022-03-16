@@ -10,7 +10,7 @@
 #define MAX_COMMANDS 8192
 
 /**
- * declare boolean type TRUE = 1 FLASE = 0 using enum
+ * declare boolean type TRUE = 1 FALSE = 0 using enum
  */
 typedef int bool;
 

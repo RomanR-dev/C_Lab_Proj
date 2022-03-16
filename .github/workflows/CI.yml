@@ -26,8 +26,14 @@ jobs:
           cmp tester/ps.ob tester/main_tester
       - uses: actions/upload-artifact@v3
         with:
-          name: assembler
-          path: assembler
+          name: assembler.zip
+          path: |
+            misc
+            passes
+            tester 
+            assembler
+            assembler.c
+            Makefile
           
   build_and_test_18_04:
     runs-on: ubuntu-18.04

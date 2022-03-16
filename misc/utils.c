@@ -1,6 +1,7 @@
 #include "definitions.h"
 #include "parsers.h"
 
+int lineNum = 1;
 /* utils */
 /**
  * swap last char /n for /0
@@ -325,7 +326,7 @@ char *iterator(char *line, FILE *inp, const int *errors) {
     while ((fgets(line, MAX_LENGTH, inp)) != NULL) { /* read from .as file and save macro data to .am file */
         if (strlen(line) > MAX_LENGTH) {
             errors += 1;
-            printf("--->line to long\n");
+            printf("%d --->line to long\n", lineNum);
             continue;
         }
         if (line[0] == '\n') continue;
@@ -341,7 +342,7 @@ char *iterator(char *line, FILE *inp, const int *errors) {
  * @param error
  */
 void printError(char *error) {
-    printf("\n--->%s\n", error);
+    printf("\n-->%s\n", error);
 }
 
 /**
@@ -403,14 +404,24 @@ void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, cha
  * @param sort
  * @return
  */
-int regNumber(char *reg, sortType sort) {
+int regNumber(char *reg, sortType sort, int *errors) {
+    int num;
     if (sort == sort2) {
         strtok(reg, "[");
         reg = strtok(NULL, ""); /* for regs in []*/
         reg[strlen(reg) - 1] = '\0';
+        ++reg;
+        num = atoi(reg);
+        if (num > 15 || num < 10) {
+            *errors += 1;
+            printf("%d --->expected regs between 10 and 15\n", lineNum);
+            return -1;
+        }
+    } else {
+        ++reg;
+        num = atoi(reg);
     }
-    ++reg;
-    return atoi(reg);
+    return num;
 }
 
 /**
@@ -500,7 +511,7 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
         mCode[*IC].word.code->destSort = destSort;
 
         if (destSort == sort3 || destSort == sort2) {
-            destReg = regNumber(parsedLine[1], destSort);
+            destReg = regNumber(parsedLine[1], destSort, errors);
             mCode[*IC].word.code->destReg = destReg;
         }
         setOperandLabel(destSort, sourceSort, labelName, mCode, parsedLine, IC, f->operands);
@@ -515,11 +526,11 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
         mCode[*IC].word.code->destSort = destSort;
 
         if (sourceSort == sort3 || sourceSort == sort2) {
-            sourceReg = regNumber(parsedLine[1], sourceSort);
+            sourceReg = regNumber(parsedLine[1], sourceSort, errors);
             mCode[*IC].word.code->sourceReg = sourceReg;
         }
         if (destSort == sort3 || destSort == sort2) {
-            destReg = regNumber(parsedLine[2], destSort);
+            destReg = regNumber(parsedLine[2], destSort, errors);
             mCode[*IC].word.code->destReg = destReg;
         }
         setOperandLabel(destSort, sourceSort, labelName, mCode, parsedLine, IC, f->operands);
@@ -548,18 +559,32 @@ void errorHandler(int *errors, char *currLine) {
     checkMalloc(lineForErrorHandling);
     stringCopy(lineForErrorHandling, currLine);
 
-    while (lineForErrorHandling[i] != '\0'){
-        if (lineForErrorHandling[i] == ','){
-            if (isComma == TRUE){
+    while (lineForErrorHandling[i] != '\0') {
+        if (lineForErrorHandling[i] == ',') {
+            if (isComma == TRUE) {
                 *errors += 1;
-                printf("--->Too many commas in 1 line\n");
+                printf("%d --->Too many commas in 1 line\n", lineNum);
             }
             isComma = TRUE;
         }
         i++;
     }
-    i = 0;
-    
+    if (strstr(lineForErrorHandling, ".string")) {
+        i = 0;
+        isComma = FALSE;
+        while (lineForErrorHandling[i] != '\0') {
+            if (lineForErrorHandling[i] == '"' && isComma == FALSE) {
+                isComma = TRUE;
+                i++;
+                continue;
+            }
+            if (isComma == TRUE && lineForErrorHandling[i] == '"'){
+                return;
+            }
+            i++;
+        }
+        printf("%d --->String not declared properly\n", lineNum);
+    }
 }
 
 /**

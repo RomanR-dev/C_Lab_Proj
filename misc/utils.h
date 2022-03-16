@@ -1,6 +1,7 @@
 #ifndef _UTILS_
 #define _UTILS_
 
+int lineNum;
 /* utils */
 void swapLastCharIfNewLine(char *string);
 
@@ -42,7 +43,7 @@ void setARE(int IC, machineCode *mCode, unsigned char A, unsigned char R, unsign
 
 void setAdditionalLines(machineCode *mCode, long *IC, sortType sort, int *L, char *operand);
 
-int regNumber(char *reg, sortType sort);
+int regNumber(char *reg, sortType sort, int *errors);
 
 void setOperandLabel(sortType destSort, sortType sourceSort, const char *labelName,
                      machineCode *mCode, char **parsedLine, const long *IC, int operands);
