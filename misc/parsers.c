@@ -1,6 +1,5 @@
 #include "definitions.h"
 #include "utils.h"
-#include "definitions.c"
 #include "utils.h"
 
 /**

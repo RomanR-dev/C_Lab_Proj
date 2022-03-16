@@ -542,9 +542,24 @@ void setCode(machineCode *mCode, long *IC, func *f, char **parsedLine, char *lab
  */
 void errorHandler(int *errors, char *currLine) {
     char *lineForErrorHandling;
+    int i = 0;
+    bool isComma = FALSE;
     lineForErrorHandling = (char *) malloc(strlen(currLine) + 1);
     checkMalloc(lineForErrorHandling);
     stringCopy(lineForErrorHandling, currLine);
+
+    while (lineForErrorHandling[i] != '\0'){
+        if (lineForErrorHandling[i] == ','){
+            if (isComma == TRUE){
+                *errors += 1;
+                printf("--->Too many commas in 1 line\n");
+            }
+            isComma = TRUE;
+        }
+        i++;
+    }
+    i = 0;
+    
 }
 
 /**
