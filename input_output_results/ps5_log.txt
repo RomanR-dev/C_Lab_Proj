@@ -1,0 +1,14 @@
+Received 1 files, starting assembler process.
+
+Processing: ps5.as
+===>>>>>> Pre assembler finished: Errors: 0
+===>>>>>> First pass finished: Errors: 0
+--->Usage of undeclared label found: LIST, error
+--->Usage of undeclared label found: NEWLABEL, error
+===>>>>>> Second pass finished: Errors: 2
+
+-->due to errors not continuing with flow on current file, continue with next file...
+===>>>>>> Finished file: tester/ps5.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.

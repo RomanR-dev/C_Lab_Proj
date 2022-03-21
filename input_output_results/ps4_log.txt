@@ -1,0 +1,19 @@
+Received 1 files, starting assembler process.
+
+Processing: ps4.as
+===>>>>>> Pre assembler finished: Errors: 0
+1 --->Error: CMD: [ mow ] not found.
+2 --->Error: CMD: [ wom ] not found.
+3 --->Error: CMD: [ step ] not found.
+4 --->Error: CMD: [ jpr ] not found.
+5 --->Error: CMD: [ ABC ] not found.
+7 --->Operand: 1, did not find matching sort type
+
+9 --->String not declared properly
+===>>>>>> First pass finished: Errors: 7
+
+-->due to errors not continuing with flow on current file, continue with next file...
+===>>>>>> Finished file: tester/ps4.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.

@@ -41,10 +41,9 @@ void mainRunner(int argc, char **argv) {
             lineNum = 1;
             firstPass(line, outP, &errors, outPutFileName);
         } else {
-            fclose(outP);
             fclose(inp);
             remove(outPutFileName);
-            printError("due to errors not continuing with flow on current file, continue with next file...");
+            printError("due to errors not continuing with flow on current file, continue with next file");
         }
         printf("===>>>>>> Finished file: %s <<<<<<===\n", outPutFileName);
         printf("======================================================================\n\n");

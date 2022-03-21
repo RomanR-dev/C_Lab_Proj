@@ -1,0 +1,22 @@
+Received 1 files, starting assembler process.
+
+Processing: ps7.as
+===>>>>>> Pre assembler finished: Errors: 0
+1 --->Too many commas in 1 line
+1 --->Too many commas in 1 line
+1 --->Too many commas in 1 line
+2 --->Wrong number of operands for command: clr
+3 --->Error: CMD: [ ... ] not found.
+4 --->Error: CMD: [ #$%#@$%@#$#@ ] not found.
+5 --->Error: CMD: [ r1 ] not found.
+6 --->Undefined label: MAIN:
+7 --->Wrong number of operands for command: jsr
+8 --->expected regs between 10 and 15
+9 --->reg: r32, wrong number
+===>>>>>> First pass finished: Errors: 11
+
+-->due to errors not continuing with flow on current file, continue with next file...
+===>>>>>> Finished file: tester/ps7.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.

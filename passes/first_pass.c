@@ -41,10 +41,10 @@ int codeDataOrString(char *line, machineCode *mCode, long *DC, bool withLabel, c
             stringCopy(mCode[*DC].declaredLabel, tempLine);
             stringCopy(tempLine, line);
         }
-        strtok(tempLine, "”");
+        strtok(tempLine, "\"");
         tempLine = strtok(NULL, "");
         if (tempLine == NULL) {
-            printf("%d --->No characters after .string declaration or string undeclared properly\n", lineNum-1);
+            printf("%d --->No characters after .string declaration or string undeclared properly\n", lineNum);
             *errors += 1;
             return 0;
         }

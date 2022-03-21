@@ -21,16 +21,16 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
-          echo compare tester/ps.ob tester/main_tester
-          cmp tester/ps.ob tester/main_tester
+          ./assembler input_output_results/ps input_output_results/ps2 input_output_results/ps3 input_output_results/ps4 input_output_results/ps5 ps6 input_output_results/ps7
+          echo compare input_output_results/ps.ob input_output_results/main_tester
+          cmp input_output_results/ps.ob input_output_results/main_tester.ob
       - uses: actions/upload-artifact@v3
         with:
           name: assembler.zip
           path: |
             misc
             passes
-            tester 
+            input_output_results 
             assembler
             assembler.c
             Makefile
@@ -45,9 +45,9 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
-          echo compare tester/ps.ob tester/main_tester
-          cmp tester/ps.ob tester/main_tester
+          ./assembler input_output_results/ps input_output_results/ps2 input_output_results/ps3 input_output_results/ps4 input_output_results/ps5 ps6 input_output_results/ps7
+          echo compare input_output_results/ps.ob input_output_results/main_tester
+          cmp input_output_results/ps.ob input_output_results/main_tester.ob
 
   build_and_test_macos-latest:
     runs-on: macos-latest
@@ -59,4 +59,4 @@ jobs:
           echo building project
           rm -f assembler
           make
-          ./assembler ps ps2 ps3 ps4 ps5 ps6 ps7
+          ./assembler input_output_results/ps input_output_results/ps2 input_output_results/ps3 input_output_results/ps4 input_output_results/ps5 ps6 input_output_results/ps7

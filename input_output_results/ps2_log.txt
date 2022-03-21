@@ -1,0 +1,11 @@
+Received 1 files, starting assembler process.
+
+Processing: ps2.as
+--->macro doesnt have a closure with 'endm' (end of code) will not create am file and continue with process.
+===>>>>>> Pre assembler finished: Errors: 1
+
+-->due to errors not continuing with flow on current file, continue with next file
+===>>>>>> Finished file: tester/ps2.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.
