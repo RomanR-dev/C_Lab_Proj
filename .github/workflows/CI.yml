@@ -23,7 +23,7 @@ jobs:
           make
           ./assembler ps
           echo compare ps.ob input_output_results/main_tester
-          cmp ps.ob input_output_results/main_tester.ob
+          diff ps.ob input_output_results/main_tester.ob -s
       - uses: actions/upload-artifact@v3
         with:
           name: assembler.zip
@@ -47,7 +47,7 @@ jobs:
           make
           ./assembler ps
           echo compare ps.ob input_output_results/main_tester
-          cmp ps.ob input_output_results/main_tester.ob
+          diff ps.ob input_output_results/main_tester.ob -s
 
   build_and_test_macos-latest:
     runs-on: macos-latest
