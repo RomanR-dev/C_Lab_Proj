@@ -1,0 +1,27 @@
+Received 1 files, starting assembler process.
+
+Processing: ps3.as
+===>>>>>> Pre assembler finished: Errors: 0
+1 --->Undefined label: LIST:
+2 --->Wrong number of operands for command: lea
+3 --->Wrong number of operands for command: mov
+5 --->Too many commas in 1 line
+6 --->Wrong number of operands for command: mov
+7 --->Undefined label: MAIN:
+8 --->Wrong number of operands for command: mov
+8 --->Too many commas in 1 line
+9 --->Wrong number of operands for command: clr
+10 --->Wrong number of operands for command: dec
+11 --->Wrong number of operands for command: bne
+12 --->Wrong number of operands for command: lea
+13 --->No data after .data declaration
+14 --->Undefined label: LABEL:
+
+14 --->No characters after .string declaration or string undeclared properly
+===>>>>>> First pass finished: Errors: 15
+
+-->due to errors not continuing with flow on current file, continue with next file...
+===>>>>>> Finished file: tester/ps3.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.

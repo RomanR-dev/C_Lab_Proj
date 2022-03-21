@@ -1,0 +1,10 @@
+Received 1 files, starting assembler process.
+
+Processing: ps.as
+===>>>>>> Pre assembler finished: Errors: 0
+===>>>>>> First pass finished: Errors: 0
+===>>>>>> Second pass finished: Errors: 0
+===>>>>>> Finished file: tester/ps.am <<<<<<===
+======================================================================
+
+Finished processing - 1 file(s) that were received.

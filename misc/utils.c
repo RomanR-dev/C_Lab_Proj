@@ -100,7 +100,7 @@ FILE *inputFileInit(char **argv, FILE *inp, int *inputFileCounter) {
  * @return
  */
 FILE *outputFileInit(FILE *outP, char *outPutFileName, char *inputName) {
-    sprintf(outPutFileName, "tester/%s.am", inputName);
+    sprintf(outPutFileName, "%s.am", inputName);
     outP = fopen(outPutFileName, "w+");
     return outP;
 }
@@ -573,7 +573,7 @@ void errorHandler(int *errors, char *currLine) {
         i = 0;
         isComma = FALSE;
         while (lineForErrorHandling[i] != '\0') {
-            if (lineForErrorHandling[i] == '"' && isComma == FALSE) {
+            if (isComma == FALSE && lineForErrorHandling[i] == '"') {
                 isComma = TRUE;
                 i++;
                 continue;
@@ -583,7 +583,11 @@ void errorHandler(int *errors, char *currLine) {
             }
             i++;
         }
-        printf("%d --->String not declared properly\n", lineNum);
+        printf("\n");
+        if (isComma == TRUE){
+            *errors += 1;
+            printf("%d --->String not declared properly\n", lineNum);
+        }
     }
 }
 

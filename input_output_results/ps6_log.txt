@@ -1,0 +1,7 @@
+Received 1 files, starting assembler process.
+
+Processing: ps6.as
+============================================================
+
+-->file not found, skipping to next
+Finished processing - 1 file(s) that were received.
